@@ -1,0 +1,13 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+amhy, PRJEB38055, ERR4078847, control, cold:heat:drought, 1, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078848, control, cold:heat:drought, 2, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078849, control, cold:heat:drought, 3, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078850, treated, cold, 1, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078851, treated, cold, 2, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078852, treated, cold, 3, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078853, treated, heat, 1, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078854, treated, heat, 2, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078855, treated, heat, 3, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078856, treated, drought, 1, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078857, treated, drought, 2, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single
+amhy, PRJEB38055, ERR4078858, treated, drought, 3, L.0, T.0, Gabriela, aerial-tissue, D.0, G.0, single

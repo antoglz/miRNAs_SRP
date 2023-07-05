@@ -1,0 +1,17 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+orsa, PRJNA561728, SRR10053825, control, xoo, 2, 10^8CFUs, 0h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053826, control, xoo, 1, 10^8CFUs, 0h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053827, treated, xoo, 2, 10^8CFUs, 36h, HHZ, leaves, tillering-stage, G.S, single
+orsa, PRJNA561728, SRR10053828, treated, xoo, 1, 10^8CFUs, 36h, HHZ, leaves, tillering-stage, G.S, single
+orsa, PRJNA561728, SRR10053829, treated, xoo, 2, 10^8CFUs, 24h, HHZ, leaves, tillering-stage, G.S, single
+orsa, PRJNA561728, SRR10053830, treated, xoo, 1, 10^8CFUs, 24h, HHZ, leaves, tillering-stage, G.S, single
+orsa, PRJNA561728, SRR10053831, treated, xoo, 2, 10^8CFUs, 12h, HHZ, leaves, tillering-stage, G.S, single
+orsa, PRJNA561728, SRR10053832, treated, xoo, 1, 10^8CFUs, 12h, HHZ, leaves, tillering-stage, G.S, single
+orsa, PRJNA561728, SRR10053833, treated, xoo, 2, 10^8CFUs, 36h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053834, treated, xoo, 1, 10^8CFUs, 36h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053835, treated, xoo, 2, 10^8CFUs, 24h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053836, treated, xoo, 1, 10^8CFUs, 24h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053837, treated, xoo, 2, 10^8CFUs, 12h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053838, treated, xoo, 1, 10^8CFUs, 12h, F329, leaves, tillering-stage, G.R, single
+orsa, PRJNA561728, SRR10053839, control, xoo, 2, 10^8CFUs, 0h, HHZ, leaves, tillering-stage, G.S, single
+orsa, PRJNA561728, SRR10053840, control, xoo, 1, 10^8CFUs, 0h, HHZ, leaves, tillering-stage, G.S, single

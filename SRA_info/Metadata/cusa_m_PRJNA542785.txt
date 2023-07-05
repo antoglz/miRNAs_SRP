@@ -1,0 +1,7 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+cusa, PRJNA542785, SRR9056886, control, waterlogging, 2, L.0, 53h, Zaoer-N, hypocotyls, three-leaf-stage, G.T, single
+cusa, PRJNA542785, SRR9056887, control, waterlogging, 1, L.0, 53h, Zaoer-N, hypocotyls, three-leaf-stage, G.T, single
+cusa, PRJNA542785, SRR9056888, treated, waterlogging, 1, L.0, 53h, Zaoer-N, hypocotyls, three-leaf-stage, G.T, single
+cusa, PRJNA542785, SRR9056889, control, waterlogging, 3, L.0, 53h, Zaoer-N, hypocotyls, three-leaf-stage, G.T, single
+cusa, PRJNA542785, SRR9056890, treated, waterlogging, 3, L.0, 53h, Zaoer-N, hypocotyls, three-leaf-stage, G.T, single
+cusa, PRJNA542785, SRR9056891, treated, waterlogging, 2, L.0, 53h, Zaoer-N, hypocotyls, three-leaf-stage, G.T, single

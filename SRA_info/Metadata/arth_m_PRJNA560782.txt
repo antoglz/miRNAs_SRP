@@ -1,0 +1,7 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+arth, PRJNA560782, SRR9995048, control, nitrogenDef, 1, L.0, T.0, Col-0, seedling, 10d, G.0, single
+arth, PRJNA560782, SRR9995049, control, nitrogenDef, 2, L.0, T.0, Col-0, seedling, 10d, G.0, single
+arth, PRJNA560782, SRR9995051, control, nitrogenDef, 3, L.0, T.0, Col-0, seedling, 10d, G.0, single
+arth, PRJNA560782, SRR9995052, treated, nitrogenDef, 1, L.0, T.0, Col-0, seedling, 10d, G.0, single
+arth, PRJNA560782, SRR9995053, treated, nitrogenDef, 2, L.0, T.0, Col-0, seedling, 10d, G.0, single
+arth, PRJNA560782, SRR9995054, treated, nitrogenDef, 3, L.0, T.0, Col-0, seedling, 10d, G.0, single

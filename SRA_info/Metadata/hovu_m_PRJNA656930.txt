@@ -1,0 +1,16 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+hovu, PRJNA656930, SRR12708724, control, pyrenophoraGraminea, 3, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708725, control, pyrenophoraGraminea, 2, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708726, control, pyrenophoraGraminea, 1, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708727, treated, pyrenophoraGraminea, 4, L.0, T.0, Kunlun14, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708728, treated, pyrenophoraGraminea, 2, L.0, T.0, Kunlun14, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708729, treated, pyrenophoraGraminea, 1, L.0, T.0, Kunlun14, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708730, control, pyrenophoraGraminea, 4, L.0, T.0, Kunlun14, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708731, control, pyrenophoraGraminea, 3, L.0, T.0, Kunlun14, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708732, treated, pyrenophoraGraminea, 4, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708733, treated, pyrenophoraGraminea, 3, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708734, treated, pyrenophoraGraminea, 2, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708735, treated, pyrenophoraGraminea, 1, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708736, control, pyrenophoraGraminea, 4, L.0, T.0, Z1141, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708737, control, pyrenophoraGraminea, 2, L.0, T.0, Kunlun14, whole-plant, 1y, G.0, single
+hovu, PRJNA656930, SRR12708738, control, pyrenophoraGraminea, 1, L.0, T.0, Kunlun14, whole-plant, 1y, G.0, single

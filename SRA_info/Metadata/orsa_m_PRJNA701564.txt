@@ -1,0 +1,13 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+orsa, PRJNA701564, SRR13696502, treated, nitrogenDef, 1, 0mM, T.0, PB1, root, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696503, treated, nitrogenDef, 2, 0mM, T.0, PB1, root, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696504, treated, nitrogenDef, 1, 0mM, T.0, PB1, seedling, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696505, treated, nitrogenDef, 2, 0mM, T.0, PB1, seedling, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696506, treated, nitrogenEx, 1, 100mM, T.0, PB1, root, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696507, treated, nitrogenEx, 2, 100mM, T.0, PB1, root, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696508, treated, nitrogenEx, 1, 100mM, T.0, PB1, seedling, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696509, treated, nitrogenEx, 2, 100mM, T.0, PB1, seedling, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696510, control, nitrogenDef:nitrogenEx, 1, 10mM, T.0, PB1, root, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696511, control, nitrogenDef:nitrogenEx, 2, 10mM, T.0, PB1, root, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696512, control, nitrogenDef:nitrogenEx, 1, 10mM, T.0, PB1, seedling, seedling-stage, G.0, single
+orsa, PRJNA701564, SRR13696513, control, nitrogenDef:nitrogenEx, 2, 10mM, T.0, PB1, seedling, seedling-stage, G.0, single

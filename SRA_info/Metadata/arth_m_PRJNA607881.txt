@@ -1,0 +1,16 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+arth, PRJNA607881, SRR11128435, treated, phytophthoraCapsici, 1, L.0, 12h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128436, treated, phytophthoraCapsici, 3, L.0, 6h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128437, treated, phytophthoraCapsici, 2, L.0, 6h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128438, treated, phytophthoraCapsici, 1, L.0, 6h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128439, treated, phytophthoraCapsici, 3, L.0, 3h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128440, treated, phytophthoraCapsici, 2, L.0, 3h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128441, treated, phytophthoraCapsici, 1, L.0, 3h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128442, control, phytophthoraCapsici, 3, L.0, 0h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128443, treated, phytophthoraCapsici, 3, L.0, 24h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128444, treated, phytophthoraCapsici, 2, L.0, 24h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128445, treated, phytophthoraCapsici, 1, L.0, 24h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128446, treated, phytophthoraCapsici, 3, L.0, 12h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128447, treated, phytophthoraCapsici, 2, L.0, 12h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128448, control, phytophthoraCapsici, 2, L.0, 0h, Col-0, leaves, D.0, G.S, single
+arth, PRJNA607881, SRR11128449, control, phytophthoraCapsici, 1, L.0, 0h, Col-0, leaves, D.0, G.S, single

@@ -1,0 +1,13 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+brna, PRJNA590544, SRR10556465, treated, cadmiumEx, 3, 10mg/ml, 10d, Zheyou29, shoot, 40d, G.0, single
+brna, PRJNA590544, SRR10556466, treated, cadmiumEx, 2, 10mg/ml, 10d, Zheyou29, shoot, 40d, G.0, single
+brna, PRJNA590544, SRR10556467, treated, cadmiumEx, 1, 10mg/ml, 10d, Zheyou29, shoot, 40d, G.0, single
+brna, PRJNA590544, SRR10556468, treated, cadmiumEx, 3, 10mg/ml, 10d, Zheyou29, root, 40d, G.0, single
+brna, PRJNA590544, SRR10556470, treated, cadmiumEx, 2, 10mg/ml, 10d, Zheyou29, root, 40d, G.0, single
+brna, PRJNA590544, SRR10556471, treated, cadmiumEx, 1, 10mg/ml, 10d, Zheyou29, root, 40d, G.0, single
+brna, PRJNA590544, SRR10556472, control, cadmiumEx, 3, 0mg/ml, 10d, Zheyou29, shoot, 40d, G.0, single
+brna, PRJNA590544, SRR10556473, control, cadmiumEx, 2, 0mg/ml, 10d, Zheyou29, shoot, 40d, G.0, single
+brna, PRJNA590544, SRR10556474, control, cadmiumEx, 1, 0mg/ml, 10d, Zheyou29, shoot, 40d, G.0, single
+brna, PRJNA590544, SRR10556475, control, cadmiumEx, 3, 0mg/ml, 10d, Zheyou29, root, 40d, G.0, single
+brna, PRJNA590544, SRR10556476, control, cadmiumEx, 2, 0mg/ml, 10d, Zheyou29, root, 40d, G.0, single
+brna, PRJNA590544, SRR10556477, control, cadmiumEx, 1, 0mg/ml, 10d, Zheyou29, root, 40d, G.0, single

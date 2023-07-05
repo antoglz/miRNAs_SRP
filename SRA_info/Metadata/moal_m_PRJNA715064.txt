@@ -1,0 +1,13 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+moal, PRJNA715064, SRR13985254, treated, chromium, 1, 660, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985255, treated, chromium, 3, 440, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985256, treated, chromium, 2, 440, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985257, treated, chromium, 1, 440, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985258, treated, chromium, 3, 220, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985259, treated, chromium, 2, 220, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985260, treated, chromium, 1, 220, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985261, treated, chromium, 3, 0, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985262, treated, chromium, 3, 660, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985263, treated, chromium, 2, 660, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985264, treated, chromium, 2, 0, T.0, multicaulis, leaves, seedling-stage, G.0, single
+moal, PRJNA715064, SRR13985265, control, chromium, 1, 0, T.0, multicaulis, leaves, seedling-stage, G.0, single

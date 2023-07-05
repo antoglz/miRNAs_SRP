@@ -1,0 +1,13 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+arth, PRJNA391262, SRR5724580, treated, highLight, 3, 1000u, 120m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724583, treated, highLight, 3, 1000u, 60m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724584, treated, highLight, 2, 1000u, 60m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724585, treated, highLight, 2, 1000u, 120m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724586, treated, highLight, 1, 1000u, 120m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724617, control, highLight, 2, L.0, 0m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724618, control, highLight, 3, L.0, 0m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724619, treated, highLight, 1, 1000u, 30m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724620, treated, highLight, 2, 1000u, 30m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724624, control, highLight, 1, L.0, 0m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724625, treated, highLight, 3, 1000u, 30m, Col-0, rosette, 23d, G.0, single
+arth, PRJNA391262, SRR5724626, treated, highLight, 1, 1000u, 60m, Col-0, rosette, 23d, G.0, single

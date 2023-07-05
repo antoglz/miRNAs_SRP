@@ -1,0 +1,5 @@
+Specie, Project, Run, Condition, Stress, Replicate, Level, Time, Cultivar, Tissue, Age/Dev-state, Genotype, Library
+orsa, PRJNA552731, SRR9644411, treated, xoo, 1, L.0, T.0, Nipponbare, leaves, 4w, G.0, single
+orsa, PRJNA552731, SRR9644414, control, xoo, 1, L.0, T.0, Nipponbare, leaves, 4w, G.0, single
+orsa, PRJNA552731, SRR9644415, control, xoo, 2, L.0, T.0, Nipponbare, leaves, 4w, G.0, single
+orsa, PRJNA552731, SRR9644416, treated, xoo, 2, L.0, T.0, Nipponbare, leaves, 4w, G.0, single
