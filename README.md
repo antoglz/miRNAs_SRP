@@ -20,7 +20,7 @@
     <li> <a href="#about-the-project">About The Project</a>
       <ul>
         <li><a href="#languages">Languages</a></li>
-        <li><a href="#pipeline-description">Pipeline description</a></li>
+        <li><a href="#pipeline-description">Pipeline Description</a></li>
         <ul>
             <li><a href="#phase-i">Phase I: Download, pre-processing and filtering</a></li>
             <li><a href="#phase-ii">Phase II: Analysis of small RNAs</a></li>
@@ -30,8 +30,8 @@
     <li><a href="#requirements">Requirements</a></li>
       <ul>
         <li><a href="#software">Software</a></li>
-        <li><a href="#standardized-metadata-structure">Standardized metadata structure</a></li>
-        <li><a href="#additional-information">Additional information</a></li>
+        <li><a href="#standardized-metadata-structure">Standardized Metadata Structure</a></li>
+        <li><a href="#additional-information">Additional Information</a></li>
       </ul>
     </li>
     <li> <a href="#usage">Usage</a>
@@ -59,7 +59,7 @@ The scripts deposited in this repository are intended to be run on a high-perfor
 </p>
 
 <p align="center">
-  <img src="https://github.com/antoglz/miRNAs_SRP/blob/main/workflow_img.png" class="center" height="600" width="900" >
+  <img src="https://github.com/antoglz/miRNAs_SRP/blob/main/workflow_img.png" class="center" height="600" width="800" >
 </p>
 
 <h4 id="phase-i">Phase I: Download, pre-processing and filtering</h4>
