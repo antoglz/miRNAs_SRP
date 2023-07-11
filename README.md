@@ -59,7 +59,7 @@ The scripts deposited in this repository are intended to be run on a high-perfor
 </p>
 
 <p align="center">
-  <img src="https://github.com/antoglz/miRNAs_SRP/workflow_img.png" class="center" height="750" width="750" >
+  <img src="https://github.com/antoglz/miRNAs_SRP/blob/main/workflow_img.png" class="center" height="750" width="750" >
 </p>
 
 <h4 id="phase-i">Phase I: Download, pre-processing and filtering</h4>
