@@ -52,14 +52,14 @@ This repository contains the scripts and part of the additional files needed to 
 - [Python](https://www.python.org) (v.3.8.13)
 - [R](https://www.r-project.orgm) (v.4.0.0)
 
-### Pipeline description
+### Pipeline Description
 
 <p style="text-align: justify;">
 The scripts deposited in this repository are intended to be run on a high-performance computing (HPC) cluster using the <a href=https://slurm.schedmd.com/documentation.html>Simple Linux Utility for Resource Management (SLURM)</a> scheduling manager. Two types of scripts are used: main scripts and submission scripts. The main scripts carry out all tasks related to data management, filtering, and analysis. Meanwhile, submission scripts (in bash) are responsible for requesting the necessary resources and executing the main script with which it is associated. Submission scripts contain the suffixes "parallel" or "exe". Those scripts with the "parallel" suffix execute the main script simultaneously for the data of multiple plant species, while those with the "exe" suffix execute the script sequentially. The pipeline can be divided into three phases: downloading, pre-processing and filtering of data (orange), analysis of small RNAs (green) and identification and classification of stress-responsive miRNAs (red).
 </p>
 
 <p align="center">
-  <img src="https://github.com/antoglz/miRNAs_SRP/blob/main/workflow_img.png" class="center" height="750" width="750" >
+  <img src="https://github.com/antoglz/miRNAs_SRP/blob/main/workflow_img.png" class="center" height="600" width="750" >
 </p>
 
 <h4 id="phase-i">Phase I: Download, pre-processing and filtering</h4>
@@ -83,7 +83,7 @@ The differentially expressed sequences of each substudy are annotated using <cod
 
 ### Software
 
-#### External software
+#### External Software
 
 - [Bowtie](https://bowtie-bio.sourceforge.net/index.shtml) (v.1.3.1)
 - [Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) (v.2.3.5.1)
@@ -91,15 +91,15 @@ The differentially expressed sequences of each substudy are annotated using <cod
 - [FastQC](https://github.com/s-andrews/FastQC) (v.0.11.9)
 - [SRA Toolkit](https://github.com/ncbi/sra-tools/wiki) (v.2.11.2)
 
-#### Python libraries
+#### Python Libraries
 
 [argparse](https://docs.python.org/es/3/library/argparse.html) (v.1.1), [Biopython](https://biopython.org) (v.1.80), [Numpy](https://numpy.org) (v.1.23.1), [Pandas](https://pandas.pydata.org) (v.1.4.0rc0), [SQLite3](https://docs.python.org/3/library/sqlite3.html) (v.3.39.3)
 
-#### R libraries
+#### R Libraries
 
 [argparse](https://cran.r-project.org/web/packages/argparse/index.html) (v.2.2.2), [Ckmeans.1d.dp](https://github.com/cran/Ckmeans.1d.dp) (v.4.3.4), [ComplexHeatmap](https://github.com/jokergoo/ComplexHeatmap) (v.2.10.0), [DESeq2](https://github.com/mikelove/DESeq2) (v.1.38.2), [dplyr](https://dplyr.tidyverse.org/index.html) (v.1.1.1), [ff](https://github.com/truecluster/ff) (v.4.0.9), [ggplot2](https://ggplot2.tidyverse.org) (v.3.4.1), [ggthemes](https://cran.r-project.org/web/packages/ggthemes/index.html) (v.4.2.4), [grid](https://github.com/cran/grid/tree/master) (v.4.1.2), [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html) (v.2.3), [htmltools](https://github.com/rstudio/htmltools) (v.0.5.5), [Plotly](https://plotly.com/r/) (v.4.10.1), [stringr](https://stringr.tidyverse.org) (v.1.5.0), [tibble](https://tibble.tidyverse.org) (v.3.2.1)
 
-### Standardized metadata structure
+### Standardized Metadata Structure
 <p style="text-align: justify;">
 Studies stored in SRA have associated metadata that provide descriptive information about their samples. Although there are certain fields of information common to all studies, many of them differ. This fact complicates the automation of data processing and analysis. Therefore, a standardized structure was designed that must be applied to all studies to be used in the analysis. This structure uses the same information fields for all metadata and follows specific guidelines to represent the information for each sample and the relationships between them. The metadata tables are made up of 13 columns that include information on the plant species studied (<code>Species</code>), the study to which each sample belongs (<code>Project</code>) and its own identifier (<code>Run</code>), whether the sample belongs to a treatment or control group (<code>Condition</code>), the replicate number (<code>Replicate</code>), the type (<code>Stress</code>) and level of stress (<code>Level</code>), the exposure time (<code>Time</code>), the plant cultivar (<code>Cultivar</code>), the tissue used (<code>Tissue</code>), the age or stage of development of the plant (<code>Age/Dev-state</code>), the genotype (<code>Genotype</code>: whether resistant or susceptible) and the type of library used (<code>Library</code>: paired-end or single-end).
 </p>
@@ -123,7 +123,7 @@ arth |PRJNAXXXXX | SRR0000010| control | drought | 1 | 70%:20%SWC | 6h | Col-0 |
 arth |PRJNAXXXXX | SRR0000011| control | drought | 2 | 70%:20%SWC | 6h | Col-0 | leaves | seedling | G.0 | single
 arth |PRJNAXXXXX | SRR0000012| control | drought | 3 | 70%:20%SWC | 6h | Col-0 | leaves | seedling | G.0 | single
 
-### Additional information
+### Additional Information
 
 There are three FASTA files that have not been deposited in this repository due to space constraints, but are essential for executing this pipeline. Two of these files are used for annotating differentially expressed sRNA sequences and contain mature plant miRNA sequences deposited in the miRBase and PmiREN databases. The other one includes RNA sequences from the RNACentral database and is used to filter out unwanted RNA sequences such as rRNA, tRNA, snRNA, and snoRNA.
 
@@ -131,7 +131,7 @@ On the other hand, the accession lists of the studies used in the analysis, the 
 
 ## Usage
 
-Run any of the submission scripts using the SLURM scheduler:
+Run any of the submission scripts using the SLURM workload manager:
 
 ```
 sbatch script_example_parallel.sh
