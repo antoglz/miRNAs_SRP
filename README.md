@@ -50,7 +50,7 @@ This repository contains the scripts and part of the additional files needed to 
 
 - [Bash](https://www.gnu.org/software/bash/manual/bash.html) (v.4.4.20)
 - [Python](https://www.python.org) (v.3.8.13)
-- [R](https://www.r-project.orgm) (v.4.0.0)
+- [R](https://www.r-project.org) (v.4.0.0)
 
 ### Pipeline Description
 
@@ -59,7 +59,7 @@ The scripts deposited in this repository are intended to be run on a high-perfor
 </p>
 
 <p align="center">
-  <img src="https://github.com/antoglz/miRNAs_SRP/blob/main/workflow_img.png" class="center" height="600" width="800" >
+  <img src="https://github.com/antoglz/miRNAs_SRP/blob/main/workflow_img.png" class="center" height="600" width="900" >
 </p>
 
 <h4 id="phase-i">Phase I: Download, pre-processing and filtering</h4>
