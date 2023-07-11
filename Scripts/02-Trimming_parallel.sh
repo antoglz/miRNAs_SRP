@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 #SBATCH --job-name=trimming         # Job name to show with squeue
 #SBATCH --output=trimming_%j.out    # Output file

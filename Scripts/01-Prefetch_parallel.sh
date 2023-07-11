@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 #SBATCH --job-name=prefetch_lib         # Job name to show with squeue
 #SBATCH --output=prefetch_lib_%j.out    # Output file
