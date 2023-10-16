@@ -49,7 +49,7 @@ Usage() {
 ArgumentsManagement() {
    
    # Read the options
-   TEMP=$(getopt -o h::p:o: --long help::,project:,output: -- "$@")
+   TEMP=$(getopt -o h::p:o:f: --long help::,project:,output:,fastqc: -- "$@")
 
    # Check if the arguments are valid
    VALID_ARGUMENTS=$?
@@ -71,6 +71,8 @@ ArgumentsManagement() {
                 project_path="$2"; shift 2 ;;
             -o|--output)
                 path_out="$2"; shift 2 ;;
+            -f|--fastqc)
+                path_out_fastqc="$2"; shift 2 ;;
             # -- meands the end of the arguments; drop this, and break out the while loop
             --) shift ; break ;;
             # If invalid options were passed...
@@ -155,7 +157,7 @@ main () {
 
     # Create directory and subdirectories paths
     path_out_project=$path_out/$species/$project
-    path_out_fastqc=$path_out/04-FastQC_data/$species/$project
+    path_out_fastqc_project=$path_out_fastqc/04-FastQC_data/$species/$project
 
     # Create output directories
     mkdir -p $path_out
@@ -165,7 +167,7 @@ main () {
     list_of_fields="$(cat $path_in/$project_file_name)"
     for SRR in $list_of_fields;
     do
-        DownloadAndFastqc $SRR $path_out_project $path_out_fastqc
+        DownloadAndFastqc $SRR $path_out_project $path_out_fastqc_project
     done
 }
 main "$@"

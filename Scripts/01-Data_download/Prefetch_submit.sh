@@ -23,8 +23,9 @@
 #******************************************************************************
 
 # Paths
-path_in=/storage/ncRNA/Projects/tsRNA_miRNA_project/01-Accession_list
-path_out=/storage/ncRNA/Projects/tsRNA_miRNA_project/03-Raw_data
+path_in=/storage/ncRNA/Projects/sRNA_project/01-Accession_list
+path_out=/storage/ncRNA/Projects/sRNA_project/03-Raw_data
+path_out_fastqc=/storage/ncRNA/Projects/sRNA_project/04-FastQC_data
 
 # List project files with accession list
 project_acc_path_list=$( ls -d1 $path_in/* )
@@ -35,7 +36,8 @@ do
     ## Execute Prefetch.sh program
     srun -N1 -n1 -c$SLURM_CPUS_PER_TASK --quiet --exclusive ./Prefetch.sh \
         -p $project_acc_path \
-        -o $path_out &
+        -o $path_out \
+        -f $path_out_fastqc &
 done
 wait
 
