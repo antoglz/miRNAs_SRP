@@ -17,8 +17,8 @@
 #   quality control check (FastQC).
 #
 #   Author: Antonio Gonzalez Sanchez
-#   Date: 05/04/2022
-#   Version: 1.0 
+#   Date: 16/10/2023
+#   Version: 2.0 
 #
 #******************************************************************************
 
