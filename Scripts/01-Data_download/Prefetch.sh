@@ -158,11 +158,11 @@ main () {
 
     # Create directory and subdirectories paths
     path_out_project=$path_out/$species/$project
-    path_out_fastqc_project=$path_out_fastqc/04-FastQC_data/$species/$project
+    path_out_fastqc_project=$path_out_fastqc/$species/$project
 
     # Create output directories
     mkdir -p $path_out
-    mkdir -p $path_out_qc
+    mkdir -p $path_out_fastqc_project
     
     # Download SRR and obtain fastqc data
     list_of_fields="$(cat $path_in/$project_file_name)"
