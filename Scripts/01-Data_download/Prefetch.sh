@@ -113,7 +113,7 @@ DownloadAndFastqc () {
     prefetch --output-directory ./tmp $srr --verify yes --check-all
 
     # Extract the fastq file (single) or files (paired)
-    fasterq-dump --split-files -O $path_out_data ./tmp/$srr/$srr.sra
+    fasterq-dump --split-files --temp ./tmp -O $path_out_data ./tmp/$srr/$srr.sra
     rm -r ./tmp/$srr
 
     # Obtain fastqc data
