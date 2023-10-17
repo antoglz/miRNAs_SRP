@@ -2,10 +2,10 @@
 
 #SBATCH --job-name=prefetch_lib         # Job name to show with squeue
 #SBATCH --output=prefetch_lib_%j.out    # Output file
-#SBATCH --ntasks=48                     # Maximum number of cores to use
+#SBATCH --ntasks=88                     # Maximum number of cores to use
 #SBATCH --time=1-00:00:00               # Time limit to execute the job
-#SBATCH --mem-per-cpu=5G                # Required Memory per core
-#SBATCH --cpus-per-task=1               # CPUs assigned per task.
+#SBATCH --mem-per-cpu=3G                # Required Memory per core
+#SBATCH --cpus-per-task=2               # CPUs assigned per task.
 #SBATCH --qos=short                     # QoS: short,medium,long,long-mem
 
 #******************************************************************************
