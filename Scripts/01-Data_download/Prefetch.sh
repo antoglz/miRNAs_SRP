@@ -106,14 +106,15 @@ DownloadAndFastqc () {
     local path_out_data="${2}"
     local path_out_qc="${3}"
 
+    # Temporary directory
+    mkdir -p ./tmp
+
     # Download file
-    prefetch $srr --verify yes --check-all
-    mv ./$srr/$srr.sra .
-    rm -r $srr
+    prefetch --output-directory ./tmp $srr --verify yes --check-all
 
     # Extract the fastq file (single) or files (paired)
-    fasterq-dump --split-files -O $path_out_data $srr.sra
-    rm $srr.sra
+    fasterq-dump --split-files -O $path_out_data ./tmp/$srr/$srr.sra
+    rm -r ./tmp/$srr
 
     # Obtain fastqc data
     if [ -e $path_out_data/$srr"_1.fastq" ] && [ -e $path_out_data/$srr"_2.fastq" ];
