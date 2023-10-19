@@ -10,7 +10,7 @@
 
 #******************************************************************************
 #  
-#   06-Diff_exp_analysis_parallel.sh
+#   06-Diff_exp_analysis_submit.sh
 #
 #   This program executes the 06-DiffExpAnalysis.r program in parallel to
 #   perform differential expression analysis using the absolute count tables
@@ -31,22 +31,33 @@ path_dea=/storage/ncRNA/Projects/TFM_AntonioG/Results/Metaanalysis_miRNA/06-Diff
 path_ea=/storage/ncRNA/Projects/TFM_AntonioG/Results/Metaanalysis_miRNA/05-PCA
 alpha=0.05
 
-#### 1. Execute 09-DiffExpAnalysis.r program in parallel
+################################################################################
+#           1. EXECUTE 06-Diff_exp_analysis.r PROGRAM IN PARALLEL              #
+################################################################################
 
-# List all species paths and names
+# List all species paths
 species=$( ls -d1 $path_in/* )
 
-# Iterate species list
+# Iterate specie paths list
 for path_species in $species
 do
-    ## Execution 
-    srun -N1 -n1 -c1 --quiet --exclusive Rscript 06-Diff_exp_analysis.r \
-        --input $path_species \
-        --output $path_dea \
-        --exploratory $path_ea \
-        --alpha $alpha &
+    ## List species projects paths
+    projects=$( ls -d1 $path_species/* )
+    
+    ## Iterate species projects paths list
+    for path_project in $projects
+    do
+        ### Execution 
+        srun -N1 -n1 -c$SLURM_CPUS_PER_TASK --quiet --exclusive Rscript 06-Diff_exp_analysis.r \
+            --input $path_project \
+            --output $path_dea \
+            --exploratory $path_ea \
+            --alpha $alpha &
+    done
 done
 wait
+
+exit 0
 
 
 #### 2. Create exploratory analysis summary file

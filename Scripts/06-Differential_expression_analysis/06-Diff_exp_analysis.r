@@ -61,7 +61,7 @@ suppressMessages(library(tidyverse))
 getArguments <- function(){
   
   # create parser object
-  parser <- ArgumentParser(prog='06-DifExpAnalysis.r',
+  parser <- ArgumentParser(prog='06-Diff_exp_analysis.r',
                            description= '
                            
    This programm takes the absolute count tables (INNER) of each project to
@@ -92,7 +92,7 @@ getArguments <- function(){
   # by default ArgumentParser will add an help option 
   required$add_argument('-i', '--input',
                       type = 'character',
-                      help = 'species directory path.',
+                      help = 'Project directory path.',
                       required = TRUE)
   required$add_argument('-o', '--output',
                       type = 'character',
@@ -388,7 +388,7 @@ exploratoryAnalysis <- function(dds, path_out, file_name){
 args <- getArguments()
 
 # Save the rest of the arguments in variables
-path_species <- args$input
+path_project <- args$input
 path_out <- args$output
 path_out_ea <- args$exploratory
 alpha_value <- args$alpha
@@ -400,136 +400,130 @@ sum <- data.frame()
 ea_df <- data.frame()
 
 # Paths
-path_inner <- paste(path_species, 'Inner_joined_tables', sep='/')
-path_outer <- paste(path_species, 'Outer_joined_tables', sep='/')
+path_inner <- paste(path_project, 'Inner_joined_tables', sep='/')
+path_outer <- paste(path_project, 'Outer_joined_tables', sep='/')
 
-# List species files
-projects_list <- list.files(path = path_outer)
-species <- basename(path_species)
+# Get species and project name
+project <- basename(path_project)
+species <- basename(dirname(path_project))
+  
+# Create output paths
+path_raw_out <- paste(path_out, '01-DEA_raw', species, project, sep = '/')
+path_sig_out <- paste(path_out, '02-DEA_sig', species, project, sep = '/')
+path_nosig_out <- paste(path_out, '03-DEA_nosig', species, project, sep = '/')
 
-# Iterate species projects
-for (project in projects_list){
+# List project files
+files_list <- list.files(path = path_outer)
+cat('Analysing project', project, '(', species, ')\n')
+
+# Iterate project files
+for (file in files_list){
+  # Files paths
+  path_inner_file <- paste(path_inner, file, sep = '/')
+  path_outer_file <- paste(path_outer, file, sep = '/')
   
-  # Create output paths
-  path_raw_out <- paste(path_out, '01-DEA_raw', species, project, sep = '/')
-  path_sig_out <- paste(path_out, '02-DEA_sig', species, project, sep = '/')
-  path_nosig_out <- paste(path_out, '03-DEA_nosig', species, project, sep = '/')
+  # New file out (without extension)
+  new_file <- gsub('.csv', '', file)
   
-  # List project files
-  path_inner_project <- paste(path_inner, project, sep = '/')
-  path_outer_project <- paste(path_outer, project, sep = '/')
-  files_list <- list.files(path = path_outer_project)
-  cat('Analysing project', project, '(', species, ')\n')
+  # Create DeseqDataSet (Inner and outer)
+  dds_inner <- csv2DESeqDataSet(path_inner_file)
+  dds_outer <- csv2DESeqDataSet(path_outer_file)
   
-  # Iterate project files
-  for (file in files_list){
-    # Files paths
-    path_inner_file <- paste(path_inner_project, file, sep = '/')
-    path_outer_file <- paste(path_outer_project, file, sep = '/')
-    
-    # New file out (without extension)
-    new_file <- gsub('.csv', '', file)
-    
-    # Create DeseqDataSet (Inner and outer)
-    dds_inner <- csv2DESeqDataSet(path_inner_file)
-    dds_outer <- csv2DESeqDataSet(path_outer_file)
-    
-    # If the count table is empty... 
-    if (!class(dds_inner) == 'DESeqDataSet' | !class(dds_outer) == 'DESeqDataSet') {
-      next
-    }
-    
-    # Exploratory analysis
-    path_out_ea_pro <- paste(path_out_ea, species, project, new_file, sep="/")
-    ea_results <- exploratoryAnalysis(dds_inner, path_out_ea_pro, new_file)
-    ea_df <- rbind(ea_df, c(species, new_file, ea_results))
-    mww_p_value <- tail(ea_results, 1)
-    
-    # If the p-value of the Man-whitney-wilcoxon test is equal or less than 0.05
-    if (mww_p_value <= 0.05){
-      
-      # Create output directories
-      if (!dir.exists(path_raw_out)) {
-        dir.create(path_raw_out, recursive = TRUE, showWarnings = FALSE)
-        dir.create(path_sig_out, recursive = TRUE, showWarnings = FALSE)
-        dir.create(path_nosig_out, recursive = TRUE, showWarnings = FALSE)
-      }
-      
-      # Differential expression analysis
-      dds_outer <- suppressMessages(DESeq(dds_outer))
-      
-      # Save results
-      results_names <- resultsNames(dds_outer)
-      i = 1
-      for (comp in results_names){
-        if (comp != 'Intercept'){
-          
-          # Get results
-          res_deseq <- results(dds_outer, name = comp, alpha = alpha_value)
-          resLFC <- suppressMessages(lfcShrink(dds_outer, coef = comp, res = res_deseq))
-          
-          # Add Shrunken LFC to results
-          final_res <- na.omit(cbind(res_deseq,
-                                     Shrunkenlog2FoldChange = resLFC$log2FoldChange,
-                                     ShrunkenlfcSE = resLFC$lfcSE))
-          
-          # Extract significant differentially expressed miRNAs
-          final_res_sig <- final_res %>% 
-            data.frame() %>%
-            rownames_to_column(var = 'seq') %>%
-            as_tibble() %>%
-            dplyr::filter(padj <= alpha_value)
-          
-          # Extracting non-significant miRNAs.
-          final_res_nosig <- final_res %>% 
-            data.frame() %>%
-            rownames_to_column(var = 'seq') %>%
-            as_tibble() %>%
-            dplyr::filter(padj > alpha_value)
-          
-          ### RESULTS TABLES
-          # Save raw final results
-          final_res <- rownames_to_column(as.data.frame(final_res), var = 'seq')
-          path_file_raw_out <- paste(path_raw_out, paste(new_file,'_', i,'_dea_raw.csv', sep=''), sep='/')
-          write.csv(final_res, file=path_file_raw_out, quote=FALSE, row.names = FALSE)
-          
-          # Save significant final results
-          path_file_sig_out <- paste(path_sig_out,paste(new_file,'_', i,'_dea_sig.csv', sep=''),sep='/')
-          write.csv(as.data.frame(final_res_sig), file=path_file_sig_out, quote=FALSE, row.names = FALSE)
-          
-          # Save significant final results
-          path_file_nosig_out <- paste(path_nosig_out,paste(new_file,'_', i,'_dea_nosig.csv', sep=''),sep='/')
-          write.csv(as.data.frame(final_res_nosig), file=path_file_nosig_out, quote=FALSE, row.names = FALSE)
-          
-          ### SUMMARY TABLE ###
-          # Get experiment
-          file_elements <- strsplit(new_file, split = '_')
-          exp <- paste(file_elements[[1]][2], i, sep = '.')
-          
-          # Significant miRNAs (p.adj < 0.05)
-          final_res_sig <- as.data.frame(final_res_sig)
-          sig <- nrow(final_res_sig)
-          
-          # Add data to dataframe
-          sum <- rbind(sum, c(species, project, exp, comp, sig, nrow(final_res)))
-          
-          i = i + 1
-        }
-      }
-      # end results loop
-    }
+  # If the count table is empty... 
+  if (!class(dds_inner) == 'DESeqDataSet' | !class(dds_outer) == 'DESeqDataSet') {
+    next
   }
-  # end files loop
-  cat(project,'(', species, ') Done!\n')
+  
+  # Exploratory analysis
+  path_out_ea_pro <- paste(path_out_ea, species, project, new_file, sep="/")
+  ea_results <- exploratoryAnalysis(dds_inner, path_out_ea_pro, new_file)
+  ea_df <- rbind(ea_df, c(species, new_file, ea_results))
+  mww_p_value <- tail(ea_results, 1)
+  
+  # If the p-value of the Man-whitney-wilcoxon test is equal or less than 0.05
+  if (mww_p_value <= 0.05){
+    
+    # Create output directories
+    if (!dir.exists(path_raw_out)) {
+      dir.create(path_raw_out, recursive = TRUE, showWarnings = FALSE)
+      dir.create(path_sig_out, recursive = TRUE, showWarnings = FALSE)
+      dir.create(path_nosig_out, recursive = TRUE, showWarnings = FALSE)
+    }
+    
+    # Differential expression analysis
+    dds_outer <- suppressMessages(DESeq(dds_outer))
+    
+    # Save results
+    results_names <- resultsNames(dds_outer)
+    i = 1
+    for (comp in results_names){
+      if (comp != 'Intercept'){
+        
+        # Get results
+        res_deseq <- results(dds_outer, name = comp, alpha = alpha_value)
+        resLFC <- suppressMessages(lfcShrink(dds_outer, coef = comp, res = res_deseq))
+        
+        # Add Shrunken LFC to results
+        final_res <- na.omit(cbind(res_deseq,
+                                   Shrunkenlog2FoldChange = resLFC$log2FoldChange,
+                                   ShrunkenlfcSE = resLFC$lfcSE))
+        
+        # Extract significant differentially expressed miRNAs
+        final_res_sig <- final_res %>% 
+          data.frame() %>%
+          rownames_to_column(var = 'seq') %>%
+          as_tibble() %>%
+          dplyr::filter(padj <= alpha_value)
+        
+        # Extracting non-significant miRNAs.
+        final_res_nosig <- final_res %>% 
+          data.frame() %>%
+          rownames_to_column(var = 'seq') %>%
+          as_tibble() %>%
+          dplyr::filter(padj > alpha_value)
+        
+        ### RESULTS TABLES
+        # Save raw final results
+        final_res <- rownames_to_column(as.data.frame(final_res), var = 'seq')
+        path_file_raw_out <- paste(path_raw_out, paste(new_file,'_', i,'_dea_raw.csv', sep=''), sep='/')
+        write.csv(final_res, file=path_file_raw_out, quote=FALSE, row.names = FALSE)
+        
+        # Save significant final results
+        path_file_sig_out <- paste(path_sig_out,paste(new_file,'_', i,'_dea_sig.csv', sep=''),sep='/')
+        write.csv(as.data.frame(final_res_sig), file=path_file_sig_out, quote=FALSE, row.names = FALSE)
+        
+        # Save significant final results
+        path_file_nosig_out <- paste(path_nosig_out,paste(new_file,'_', i,'_dea_nosig.csv', sep=''),sep='/')
+        write.csv(as.data.frame(final_res_nosig), file=path_file_nosig_out, quote=FALSE, row.names = FALSE)
+        
+        ### SUMMARY TABLE ###
+        # Get experiment
+        file_elements <- strsplit(new_file, split = '_')
+        exp <- paste(file_elements[[1]][2], i, sep = '.')
+        
+        # Significant miRNAs (p.adj < 0.05)
+        final_res_sig <- as.data.frame(final_res_sig)
+        sig <- nrow(final_res_sig)
+        
+        # Add data to dataframe
+        sum <- rbind(sum, c(species, project, exp, comp, sig, nrow(final_res)))
+        
+        i = i + 1
+      }
+    }
+    # end results loop
+  }
+  # end mww_pvalue conditional
 }
-# end projects loop
+# end files loop
+cat(project,'(', species, ') Done!\n')
 
 
 # Save summary file
 if (nrow(sum) > 0){
   colnames(sum) <- c('species', 'Project', 'Experiment', 'Comparison', 'Padj<0.05', 'Total')
   write.csv(as.data.frame(sum),
-            file=paste(path_out, '/', species,'_summary.csv', sep=''),
+            file=paste(path_out, '/', project,'_summary.csv', sep=''),
             quote=FALSE,
             row.names = FALSE)
 }
@@ -538,7 +532,7 @@ if (nrow(sum) > 0){
 if (nrow(ea_df) > 0){
   colnames(ea_df) <- c('species', 'Project','PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'P-value(MWW)')
   ea_df[is.na(ea_df)] <- 0
-  write_csv(ea_df, paste(path_out_ea,'/', species, '_ea_summary_table.csv', sep=''))
+  write_csv(ea_df, paste(path_out_ea,'/', project, '_ea_summary_table.csv', sep=''))
 }
 
 
