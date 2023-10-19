@@ -51,22 +51,14 @@ wait
 #     2. DOWNLOAD THOSE LIBRARIES THAT COULD NOT BE DOWNLOADED IN PARALLEL     #
 ################################################################################
 
-# List and iterate error files
-error_project_list=$( ls -d1 ./tmp/*_error.txt )
-
-if [ -n "$error_project_list" ]
+# Check if there are files with the "_error.txt" suffix
+if [ "$(ls -A ./tmp/*_error.txt 2>/dev/null)" ]
 then
-    for error_project_path in $error_project_list
+    # Iterate error files
+    for error_file in ./tmp/*_error.txt
     do
-        # List and iterate runs that have failed (file lines)
-        list_of_error_runs="$(cat $error_project_path)"
-        for error_SRR_line in $list_of_error_runs
-        do
-
-            # Get species, project and run names
-            species=$(echo -e "$error_SRR_line" | cut -f1)
-            project=$(echo -e "$error_SRR_line" | cut -f2)
-            error_SRR=$(echo -e "$error_SRR_line" | cut -f3)
+        # Read lines from the file and separate columns into variables
+        while IFS=$'\t' read -r species project error_SRR; do
 
             # Paths
             path_out_data=$path_out/$species/$project
@@ -113,7 +105,7 @@ then
                 # If the prefetch command fails...
                 printf "$species\t$project\t$error_SRR\n" >> failed_runs.txt
             fi
-        done
+        done < "$error_file"
     done
 fi
 
