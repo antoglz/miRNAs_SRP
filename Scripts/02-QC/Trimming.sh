@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 
 #******************************************************************************
 #  
@@ -7,36 +7,14 @@
 #   This program is used to trim the sequences using Illumina adapters.
 #   For this purpose, the Fastp program is utilized.
 #
-#   Author: Antonio Gonzalez Sanchez, Pascual Villalba
-#   Date: 11/04/2022
-#   Version: 1.0 
+#   Author: Antonio Gonzalez Sanchez and Pascual Villalba
+#   Date: 19/10/2023
+#   Version: 2 
 #
 #******************************************************************************
 
 
 ### FUNCTIONS
-
-#################################################
-#
-#   This function contains the usage message
-#
-#################################################
-
-Usage() {
-    
-    help='''
-    usage: 01-Prefetch.sh [options] ...
-    options:
-        -h                      help
-        -i/--input              Path to the ".txt" file containing the SRA (Run)
-                                identifiers of a specific project.
-        -o/--output             Path to the directory in which the libraries
-                                and FastQC results will be stored.
-    '''
-    echo "$help"
-    exit 0
-}
-
 
 #####################################################
 #
@@ -48,7 +26,7 @@ Usage() {
 ArgumentsManagement() {
    
    # Read the options
-   TEMP=$(getopt -o h::s:o:a: --long help::,species:,output:,adapters: -- "$@")
+   TEMP=$(getopt -o h::p:o:a:n:x: --long help::,project:,output:,adapters:,minlength:,maxlength: -- "$@")
 
    # Check if the arguments are valid
    VALID_ARGUMENTS=$?
@@ -66,12 +44,16 @@ ArgumentsManagement() {
         case "$1" in
             -h|--help)
                 Usage ;;
-            -s|--species)
+            -p|--project)
                 path_in="$2"; shift 2 ;;
             -o|--output)
                 path_out="$2"; shift 2 ;;
             -a|--adapters)
                 path_adapters="$2"; shift 2 ;;
+            -n|--minlength)
+                min_len="$2"; shift 2 ;;
+            -x|--maxlength)
+                max_len="$2"; shift 2 ;;
             # -- meands the end of the arguments; drop this, and break out the while loop
             --) shift ; break ;;
             # If invalid options were passed...
@@ -100,6 +82,8 @@ FastpTrimming(){
     local path_in="${1}"
     local path_out="${2}"
     local path_adapters="${3}"
+    local min_len="${4}"
+    local max_len="${5}"
 
     # Get the input directory path
     path_in_dir=$(dirname "$path_in")
@@ -117,8 +101,8 @@ FastpTrimming(){
             -o $path_out/$srr"_tr_1P.fastq.gz" -O $path_out/$srr"_tr_2P.fastq.gz" \
             --correction --cut_right --cut_right_window_size 4 --cut_right_mean_quality 20 \
             --cut_front --cut_front_window_size 1 --cut_front_mean_quality 3 \
-            --cut_tail --cut_tail_window_size 1 --cut_tail_mean_quality 3 \
-            --length_required 20 --length_limit 25 --trim_poly_x --poly_x_min_len 10
+            --length_required $min_len --trim_poly_x --poly_x_min_len 10 \
+            --length_limit $max_len --n_base_limit 1
 
     ## Single end
     elif echo $file | grep -q ".fastq.gz";
@@ -128,8 +112,8 @@ FastpTrimming(){
             -o $path_out/$srr"_tr.fastq.gz" \
             --cut_right --cut_right_window_size 4 --cut_right_mean_quality 20 \
             --cut_front --cut_front_window_size 1 --cut_front_mean_quality 3 \
-            --cut_tail --cut_tail_window_size 1 --cut_tail_mean_quality 3 \
-            --length_required 20 --length_limit 25 --trim_poly_x --poly_x_min_len 10
+            --length_required $min_len --trim_poly_x --poly_x_min_len 10 \
+            --length_limit $max_len --n_base_limit 1
     fi
 }
 
@@ -140,24 +124,20 @@ main () {
     # Get arguments
     ArgumentsManagement "$@"
 
-    # Get the name of the species
-    species=$(basename "$path_in")
+    # Get species and project names
+    project=$(basename "$path_in")
+    species=$(basename "$(dirname "$path_in")")
 
-    # List and iterate species projects
-    projects_list=$(ls $path_in)
-    for project in $projects_list
+    # Create output directories
+    path_out_project=$path_out/$species/$project
+    mkdir -p $path_out_project
+
+    # List and iterate fastq files of the project
+    fastq_list=$( ls -d1 $path_in/* )
+    for fastq in $fastq_list
     do
-        # Create output directories
-        path_out_project=$path_out/$species/$project
-        mkdir -p $path_out_project
-
-        # List and iterate fastq files of the project
-        fastq_list="$(ls $path_in/$project)"
-        for fastq in $fastq_list
-        do
-            # Trimming
-            FastpTrimming $path_in/$project/$fastq $path_out_project $path_adapters
-        done
+        # Trimming
+        FastpTrimming $fastq $path_out_project $path_adapters $min_len $max_len
     done
 }
 main "$@"
