@@ -3,21 +3,22 @@
 
 #******************************************************************************
 #  
-#   05-Divide_filter_by_experiments.py
+#   05-Divide_filter_by_subproject.py
 #
-#   This programm divides by experiments the count tables of the species
-#   projects writing the table section of each experiment in a separate
+#   This programm divides by subprojects the count tables of the species
+#   projects writing the table section of each subproject in a separate
 #   file. To do this, it uses the metadata of each project to group the
 #   columns of the treatment samples with the columns of the control
 #   samples with which they are associated. Finally, it extracts each
 #   group of columns from the original table (previously inserted into
 #   an SQlite database), and writes them to a new separate "csv" file
 #   while selecting those sequences that have 5 or more counts in at
-#   least 5 samples. In case the experiment has less than 5 samples,
-#   all the experiment samples must have at least 5 counts.
+#   least 5 samples. In case the subproject has less than 5 samples,
+#   all the subproject samples must have at least 5 counts.
 #
 #   Author: Antonio Gonzalez Sanchez
-#   Date: 21/12/2022
+#   Date: 21/09/2023
+#   Version: 1.1
 #
 #
 #******************************************************************************
@@ -322,12 +323,12 @@ def GetInformativeVariables(df: pd.DataFrame) -> list:
     return inf_var_pos
 
 
-### 3. DIVIDE BY EXPERIMENTS FUNCTION
+### 3. DIVIDE BY subprojects FUNCTION
 
-def DivideProjectByExperiments(project_samples, project_metadata):
+def DivideProjectBysubprojects(project_samples, project_metadata):
     '''
     This function receives a list of samples from a project and groups them
-    according to the experiment they belong to. It does this by comparing
+    according to the subproject they belong to. It does this by comparing
     control samples with treatment samples to identify which treatment samples
     are associated with which control samples. Once identified, it groups them
     in a list together with their control samples. The function returns a list
@@ -402,7 +403,7 @@ def DivideProjectByExperiments(project_samples, project_metadata):
                 elif treated_sample[k] == control_sample[k]:
                         matrix[i][j] += 1
 
-    # Grouping controls and treatments by experiment
+    # Grouping controls and treatments by subproject
     groups_list = [[] for x in range(len(controls_condition))]
     done = []
     for i in range(len(matrix)):
@@ -440,31 +441,29 @@ def main():
     '''
     
     # Get and check arguments
-    parser = argparse.ArgumentParser(prog='05-DivideAndFilterProjectsByExperiments.py', 
+    parser = argparse.ArgumentParser(prog='05-DivideAndFilterProjectsBysubprojects.py', 
                                      description='''This program divides the project count tables for each
-                                     species by experiment writing the table section of each experiment in
+                                     species by subproject writing the table section of each subproject in
                                      a separate file. To do this, it uses the metadata of each project to
                                      group the columns of the treatment samples with the columns of the
                                      control samples with which they are associated. Finally, it extracts
                                      each group of columns from the original table (previously inserted into
                                      an SQlite database), and writes them to a new separate "csv" file while
                                      selecting those sequences that have 5 or more counts in at least 5
-                                     samples. In case the experiment has less than 5 samples, all the experiment
+                                     samples. In case the subproject has less than 5 samples, all the subproject
                                      samples must have at least 5 counts.''',  
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     parser.add_argument('-c', '--path-counts', type=str, nargs=1,
-                        help='Asbolute path of the directory where the counts tables files are located')
+                        help='Asbolute path of the directory where the project counts tables files are located')
     parser.add_argument('-m', '--metadata', type=str, nargs=1,
                         help='Asbolute path of the directory where the metadata tables files are located.')
-    parser.add_argument('-p', '--projects', type=str, nargs=1,
-                        help='Absolute path of the .txt file containing the list of projects to be processed.')
     parser.add_argument('-r', '--path-results', type=str, nargs=1,
                         help='Asbolute path of the directory in which to save the results.')
     args = parser.parse_args()
 
     try:
-        path_counts = args.path_counts[0]
+        path_project_counts = args.path_counts[0]
         metadata = args.metadata[0]
         path_out = args.path_results[0]
     except:
@@ -473,55 +472,46 @@ def main():
         sys.exit()
     
 
-    # Get the species name
-    species = os.path.basename(path_counts).split('_')[0]
+    # Get the project and the species name
+    project = os.path.basename(path_project_counts)
+    species = os.path.basename(os.path.dirname(path_project_counts))
 
-    # List all projects of the species
-    projects_dir_list = os.listdir(path_counts)
+    # Get project name and path
+    path_tables_tuple = (f'{path_project_counts}/fusion_abs-outer.csv',
+                         f'{path_project_counts}/fusion_abs-inner.csv')
+    
+    # Table_name. Replace "-" with "_". SQLite does not accept the character "-".
+    table_name = project.replace("-", "_")
 
-    # Iterate projects list
-    for project_dir in projects_dir_list:
-
-        # Get project name and path
-        project = project_dir.split('_')[0]
-        path_tables_tuple = (f'{path_counts}/{project_dir}/fusion_abs-outer.csv',
-                             f'{path_counts}/{project_dir}/fusion_abs-inner.csv')
+    # Iterate paths list
+    print(f'Separating {project} ({species}) project into subprojects...')
+    for path_table in path_tables_tuple:
         
-        # Table_name. Replace "-" with "_". SQLite does not accept the character "-".
-        table_name = project.replace("-", "_")
+        # Get the join type (inner or outer)
+        join_type = os.path.basename(path_table).split('-')[1].split('.')[0]
+    
+        # Get file columns
+        with open(path_table, 'r') as file:
+            columns = file.readline().rstrip().split(",")
 
-        # Iterate paths list
-        print(f'Separating {project} ({species}) project into experiments...')
-        for path_table in path_tables_tuple:
-            
-            # Get the join type (inner or outer)
-            join_type = os.path.basename(path_table).split('-')[1].split('.')[0]
+        # Insert counts table into SQLite database
+        id_dic = Insert2Database(f'{project}_database_{join_type}.db', table_name, path_table, columns)
+
+        # Obtain subprojects groups
+        project_metadata = f'{metadata}/{species}_m_{project}.txt'
+        groups_list = DivideProjectBysubprojects(columns, project_metadata)
         
-            # Get file columns
-            with open(path_table, 'r') as file:
-                columns = file.readline().rstrip().split(",")
+        # Create project path out (outer or inner) 
+        project_path_out = f'{path_out}/{species}/{join_type.capitalize()}_joined_tables/{project}'
+        os.system(f'mkdir -p {project_path_out}')
 
-            # Insert counts table into SQLite database
-            id_dic = Insert2Database(f'{species}_database_{join_type}.db', table_name, path_table, columns)
+        # Write the subprojects in different files
+        for i, group in enumerate(groups_list):
+            file_path_out = f'{project_path_out}/{project}_{str(i + 1)}.csv'
+            Sql2Csv(f'{project}_database_{join_type}.db', table_name, file_path_out, group, id_dic)
 
-            # Obteain experiments groups
-            project_metadata = f'{metadata}/{species}_m_{project}.txt'
-            groups_list = DivideProjectByExperiments(columns, project_metadata)
-            
-            # Create project path out (outer or inner)
-            project_path_out = f'{path_out}/{species}/{join_type.capitalize()}_joined_tables/{project}'
-            os.system(f'mkdir -p {project_path_out}')
-
-            # Write the experiments in different files
-            for i, group in enumerate(groups_list):
-                file_path_out = f'{project_path_out}/{project}_{str(i + 1)}.csv'
-                Sql2Csv(f'{species}_database_{join_type}.db', table_name, file_path_out, group, id_dic)
-
-            # Delete SQlite database
-            os.system(f'rm -f {species}_database_{join_type}.db')
-        
-        print(f'{project} ({species}) done!')
-
+        # Delete SQlite database
+        os.system(f'rm -f {project}_database_{join_type}.db')
 
 ## CALL THE MAIN PROGRAM
 

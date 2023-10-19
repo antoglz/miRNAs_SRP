@@ -1,58 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 #******************************************************************************
 #  
 #   04-Counts_and_sRNADatabase.py
 #
-#   This program generates the absolute counts and Reads Per Million (RPMs)
-#   tables for each project using the trimmed and filtered libraries, also
-#   calculating the averages of both types of counts in the different
+#   This program generates the absolute counts and Reads Per Million (RPM)
+#   tables for a specific project using the trimmed and filtered libraries,
+#   also calculating the averages of both types of counts in the different
 #   replicates of each condition for the sequences analysed. To do this,
 #   a series of procedures are carried out:
-#
-#   1. Create a unique sRNA identifiers database.
-#
-#   Read the species fasta files (libraries) and check for unique sequences
-#   removing sRNAs with indeterminacies (N) and keeping sRNAs within the
-#   length range of 20 to 25 ntds. Then, build a big database assigning an
-#   unique identifier to each unique sRNA sequence. Example: Arabidopsis
-#   thaliana will be ARTHXXXXXXXX.
-#
-#   2. Filter the libraries and rename the sRNAs sequences with the unque
-#      sRNA identifiers database (Filter 1)
-#
-#   First, read the library in fasta format again. Then, the libraries are
-#   joined to the database of the species in question by INNER JOIN. As the
-#   requirements for the creation of the database are the absence of
-#   indeterminacy and a sequence length between 20 and 25 ntds, all
-#   sequences that meet these conditions are selected indirectly.
 #   
-#   3. Filter the libraries by RNAcentral (Filter 2. Optional)
+#   1. Filter the libraries by RNAcentral (Optional)
 #
 #   Align the sequences of each library with the rRNA, tRNA, snRNA and
 #   snoRNA sequences contained in the RNAcentral database for
 #   identification and elimination.
 #
-#   4. Create the absolute counts and RPMs tables for each library.
+#   2. Create the absolute counts and RPM tables for each library.
 #
-#   Read filtered libraries and create absolute counts and RPMs tables
+#   Read filtered libraries and create absolute counts and RPM tables
 #   in CSV format. These tables have two columns: seq and counts (absolute
-#   counts)/RPMs (Reads per Million).
+#   counts)/RPM (Reads per Million).
 #   
-#               RPMs = absolute count * 1000000 / size library.
+#               RPM = absolute count * 1000000 / size library.
 #  
-#   5. Join all the RPMs tables and all the absolute counts tables in
+#   3. Join all the RPM tables and all the absolute counts tables in
 #      two tables.
 #
-#   Once the absolute counts and RPMs have been calculated for the sequences
+#   Once the absolute counts and RPM have been calculated for the sequences
 #   of each library, a table is created for each type of count by joining
 #   the results of the libraries belonging to the same project.
 #
-#   
+#
 #   Authors: Antonio Gonzalez Sanchez, Pascual Villalba Bermell (pvbermell)
-#   Date: 16/02/2021
-#   Version: 1.0
+#   Date: 20/09/2023
+#   Version: 2.0
 #
 #******************************************************************************
 
@@ -125,8 +109,8 @@ def Insert2Database(database_name: str, table_name: str, data_path: str, type_da
     type_data : str
         Type of data to be inserted. In this program you can insert a library
         of sequences in .tsv format (type_data="sequences"), a table of
-        absolute counts (type_data="counts_abs") or a table of rpms
-        ("type_data="counts_rpms"). By default "sequences.
+        absolute counts (type_data="counts_abs") or a table of rpm
+        ("type_data="counts_rpm"). By default "sequences.
     '''
     # Connect to database
     sqliteConnection, cursor = Connect2Database(database_name)
@@ -138,9 +122,9 @@ def Insert2Database(database_name: str, table_name: str, data_path: str, type_da
     elif type_data == 'counts_abs':
         sep =','
         query_section = '(seq TEXT, counts INT);'
-    elif type_data == 'counts_rpms':
+    elif type_data == 'counts_rpm':
         sep =','
-        query_section = '(seq TEXT, RPMs REAL);'
+        query_section = '(seq TEXT, RPM REAL);'
     
     # Read data to insert
     chunksize=1000000
@@ -196,19 +180,19 @@ def MergeCountsTablesPROCESSING(list_of_tuples: list) -> None:
     ----------
     list_of_tuples : list
         List of two tuples. The first tuple contains the information associated
-        with the absolute counts and the second one with the RPMs. Each tuple
+        with the absolute counts and the second one with the RPM. Each tuple
         contains 4 elements, which serve as arguments to the MergeCountsTables()
         function. The first of these arguments is a list with the names of the
         replicates of each condition (t_1_r_1, t_1_r_2, t_2_r_1, t_2_r_2), the
         second one is a string that specifies the type of data we are working
-        with (it can be "counts" or "RPMs"), the third one is a string that
+        with (it can be "counts" or "RPM"), the third one is a string that
         specifies the type of tables we want to join (it can be "replicates" or
         "conditions") and the last one is a string that specifies the method by
         which replicates of the same condition will join if the third argument
         is "replicates". The last element is optional.
     '''
 
-    # Two processes will be used, one for absolute counts and one for RPMs.
+    # Two processes will be used, one for absolute counts and one for RPM.
     num_process = 2
 
     # Processes list
@@ -256,7 +240,7 @@ def MergeCountsTables(database_name: str, data_in: list, type_data: str,
         List with the name of replicates of each condition (t_1_r_1, t_1_r_2,
         t_2_r_1, t_2_r_2)
     type_data : str
-        Type of data. Type_data can be "counts" or "RPMs".
+        Type of data. Type_data can be "counts" or "RPM".
     type_tables:
         Type of tables to join. type_tables can be "replicates" or "conditions".
     mode : str
@@ -643,105 +627,6 @@ def Fasta2Csv(fasta_file: str, sep: str, new_file_path: str) -> None:
 
 ### 3. FILTERING FUNCTIONS
 
-def FilterLibrariesAndRenameSRNAs(tables_list: list, path_out: str, database_table_name: str, sqldb_name: str) -> None:
-    '''
-    This function filters the libraries by indeterminacy and sequence length
-    range (20-25 ntds) (criteria also followed for the creation of the
-    database), renames the filtered sequences with the new identifier using
-    the database and saves the new libraries in a new fasta file. To do this,
-    it uses sqlite tables where the sequences of each library and the unique
-    sequences of the species are stored.
-
-    Parameters
-    ----------
-    tables_list : list
-        List of Sqlite tables where the sequences of the libraries are stored.
-    path_out : str
-        Path of the directory where the new ".fasta" files will be saved.
-    database_table_name: str
-        Name of the table containing the unique sequences of the species
-        together with its identifier (sRNAs database)
-    sqldb_name: str
-        Name of the SQLite database where the library tables of a species
-        are stored, as well as its sRNAs database (identifier-sequence).
-
-    '''
-
-    # Iterate the tables list
-    for table in tables_list:
-
-        ## 1. RENAME LIBRARY SEQUENCES USING sRNAs DATABASE
-        ######################################################################
-
-        # Absolute output path
-        path_file_out =  f'{path_out}/{table}_si_filtered.fasta'
-
-        print(f'Renaming {table} sequences using database ids...')
-        sys.stdout.flush()
-        t_ini = time()
-
-        sqliteConnection, cursor = Connect2Database(sqldb_name)
-        try:
-            # Join library and species sRNAs database (INNER JOIN)
-            cursor.execute( f'CREATE TABLE {table}_renamed AS SELECT t1.header, t1.seq ' \
-                                + f'FROM {table} t2 INNER JOIN {database_table_name}' \
-                                + ' t1 ON t1.seq = t2.seq')
-            exit = False
-        except Error as error:
-            print('ERROR: Something went wrong during the renaming of the library.')
-            print(f'ERROR:\n{error}\n')
-            exit = True
-
-        finally:
-            # Commit work and close connection
-            sqliteConnection.commit()
-            sqliteConnection.close()
-
-             # If it fails, exit the program
-            if exit:
-                sys.exit()
-
-
-        ## 2. SAVE RENAMED LIBRARY IN .TSV FILE
-        #######################################################################
-        
-        sqliteConnection, cursor = Connect2Database(sqldb_name)
-        try:
-            # Execute SELECT query
-            cursor.execute(f'SELECT * FROM {table}_renamed;')
-
-            # Write table in tsv file
-            with open(path_file_out, 'w') as tsv_file:
-                for row in cursor:
-                    # Write in .fasta file
-                    tsv_file.write(f'>{row[0]}\n{row[1]}\n')
-            
-            
-            t_end = time()
-            print('Time: %.3f s' % (t_end - t_ini))
-            print('DONE!\n')
-            sys.stdout.flush()
-
-            # Delete database tables after use
-            cursor.execute(f'DROP TABLE {table};')
-            cursor.execute(f'DROP TABLE {table}_renamed;')
-            exit = False
-
-        except Error as error:
-            print('ERROR. Something went wrong during the renaming of the sequences.')
-            print(f'ERROR:\n{error}\n')
-            exit = True
-
-        finally:
-            # Commit work and close connection
-            sqliteConnection.commit()
-            sqliteConnection.close()
-
-            # If it fails, exit the program
-            if exit:
-                sys.exit()
-
-
 def FilterByRNAcentral(library_list: list, Rnacentral_dir: str,
                         path_write: str) -> None:
     '''
@@ -948,7 +833,7 @@ def AllAbsoluteCounts (libraries_list: list, path_read: str, path_write: str):
 def AllRPMCountsPROCESSING(abs_list: list, path_read: str, path_write: str, num_process: int):
     '''
     This function is used to parallelize the AllRPMCounts function, which
-    calculates the reads per millon (RPMs) of each library.
+    calculates the reads per millon (RPM) of each library.
 
     Parameters
     ----------
@@ -959,7 +844,7 @@ def AllRPMCountsPROCESSING(abs_list: list, path_read: str, path_write: str, num_
     path_read : str
         Absolute path of the directory where the input csv files are located.
     path_write : str
-        Absolute path of the directory where the RPMs tables will be stored.
+        Absolute path of the directory where the RPM tables will be stored.
     num_process : int
         Number of processes.
     '''
@@ -1006,7 +891,7 @@ def AllRPMCountsPROCESSING(abs_list: list, path_read: str, path_write: str, num_
 
 def AllRPMCounts (abs_list: list, path_read: str, path_write: str):
     '''
-    This function calculates the reads per millon (RPMs) of a libraries list.
+    This function calculates the reads per millon (RPM) of a libraries list.
 
     Parameters
     ----------
@@ -1017,7 +902,7 @@ def AllRPMCounts (abs_list: list, path_read: str, path_write: str):
     path_read : String
         Absolute path of the directory where the input csv files are located.
     path_write : String
-        Absolute path of the directory where the RPMs tables will be stored.
+        Absolute path of the directory where the RPM tables will be stored.
     '''
 
     # Iterate the absolute counts files list.
@@ -1035,22 +920,22 @@ def AllRPMCounts (abs_list: list, path_read: str, path_write: str):
         chunksize = 1000
         sum_reads = 0
         with open(path_file_in) as reader_sum:
-            sum_df = pd.read_csv(reader_sum, ",", chunksize=chunksize, low_memory=False)
+            sum_df = pd.read_csv(reader_sum, sep=",", chunksize=chunksize, low_memory=False)
             for chunk in sum_df:
                 sum_reads += chunk['counts'].sum()
         
-        # Create the RPMs table
+        # Create the RPM table
         with open(path_file_in, "r") as reader, open(path_file_out, 'w') as writer:
-            count_tab = pd.read_csv(reader, ",", chunksize=chunksize, low_memory=False)
+            count_tab = pd.read_csv(reader, sep=",", chunksize=chunksize, low_memory=False)
             first_chunk = True
             for chunk in count_tab:
-                # Insert chunk in a table and calculate RPMs
+                # Insert chunk in a table and calculate RPM
                 chunk_df = pd.DataFrame(chunk, columns=['seq', 'counts'])
                 abs_ = np.array(list(chunk_df['counts']), dtype = float) 
-                rpms = (abs_ * 1000000) / sum_reads
-                chunk_df.insert(value = rpms, column='RPMs', loc=2)
+                rpm = (abs_ * 1000000) / sum_reads
+                chunk_df.insert(value = rpm, column='RPM', loc=2)
                 chunk_df = chunk_df.iloc[:,[0,2]]
-                chunk_df.columns = ['seq', 'RPMs']
+                chunk_df.columns = ['seq', 'RPM']
                 # Save result in a new file
                 if first_chunk:
                     chunk_df.to_csv(writer, index = None, mode='a') 
@@ -1186,164 +1071,20 @@ def ParseFastaFile(fasta_file: str) -> None:
         print('Error. Check that the files entered are fasta')
         sys.exit()
 
-
-def CreationUniqueSRNAsDatabase(table_list: list, prefix: str, max_digits: int, path_out: str, sql_db_name: str):
-    '''
-    This function generates a tsv file with the unique sRNA sequences of the
-    fasta files belonging to the different projects of the same species.
-
-    Parameters
-    ----------
-    tables_list : List
-        List of fasta files belonging to the different projects of the
-        same species.
-    prefix : str
-        species prefix (e.g. arth)
-    max_digits : str
-        Number of digits to be contained in the unique identifier.
-    path_out : str
-        Absolute path of the unique sequences tsv file.
-    sql_db_name : str
-        Name of the sql database that is used to select the unique sequences of the species.
-    '''    
-    
-    ## 1. Create table of unique size-filtered sequences
-    ###########################################################################
-    
-    # Sqlite database table name
-    table_unique = path_out.split('/')[-1].split('.')[0]
-
-    # Queries to insert the sequences of library tables in the same table
-    queries_list = []
-    for i in range(len(table_list)):
-        # Create table with unique sequences 
-        if i == 0:
-            queries_list.append('CREATE TABLE IF NOT EXISTS dup_seqs(seq TEXT);')
-
-        # Insert library sequences
-        queries_list.append(f'INSERT INTO dup_seqs SELECT seq FROM {table_list[i]} WHERE (LENGTH(seq) BETWEEN 20 and 25) AND seq NOT LIKE "%N%";')
-
-    # Query to remove duplicate sequences
-    queries_list.append(f'CREATE TABLE IF NOT EXISTS {table_unique} AS SELECT DISTINCT seq FROM dup_seqs ORDER BY seq;')
-
-    # Execute queries
-    sqliteConnection, cursor =  Connect2Database(sql_db_name)
-    try:
-        for query in queries_list:
-            cursor.execute(query)
-        exit = False
-    
-    except Error as error:
-        print('ERROR. Something went wrong during the collection of unique sequences...')
-        print(f'ERROR:\n{error}\n')
-        print(f'Query: {query}')
-        exit = True
-    
-    finally:
-    
-        # Commit and close database
-        sqliteConnection.commit()
-        sqliteConnection.close()
-
-        # If it fails, exit the program
-        if exit:
-            sys.exit()
-
-    ## 2. Create unique identifier for each sequence
-    ###########################################################################
-
-    sqliteConnection, cursor =  Connect2Database(sql_db_name)
-    try:
-        # Get the number of sequences
-        cursor.execute(f'SELECT COUNT(seq) FROM {table_unique};')
-        num_seqs = cursor.fetchone()[0]
-
-        # Create and add identifiers to the table
-        cursor.execute(f'ALTER TABLE {table_unique} ADD header TEXT;')
-        
-        count = 1
-        for i in range(1, num_seqs + 1):
-            # Create identifier
-            n_digits = len(str(count))
-            n_zeros = max_digits - n_digits
-            identifier = str(prefix.upper() + '0' * n_zeros + str(count)) # e.g. >ARTH00000000
-            cursor.execute(f'UPDATE {table_unique} SET header = "{identifier}" WHERE rowid={str(i)}')
-            count += 1
-            exit = False
-
-        # Create index
-        cursor.execute(f'CREATE INDEX idx_{table_unique} ON {table_unique}(seq);')
-
-    except Error as error:
-        print('ERROR. Something went wrong during the creation of the unique identifiers...')
-        print(f'ERROR:\n{error}\n')
-        print(f'Query: {query}')
-        exit = True
-    
-    finally:
-        # Commit and close database
-        sqliteConnection.commit()
-        sqliteConnection.close()
-
-        # If it fails, exit the program
-        if exit:
-            sys.exit()
-
-
-    ## 3. Write unique sequences in a tsv file
-    ###########################################################################
-    
-    # Execute SELECT query
-    sqliteConnection, cursor =  Connect2Database(sql_db_name)
-    try:
-        cursor.execute(f'SELECT seq, header FROM {table_unique};')
-        exit = False
-    
-    except Error as error:
-        print('ERROR. Something went wrong during the writing of the unique sRNAs database in a tsv file.')
-        print(f'ERROR:\n{error}\n')
-        exit = True
-        
-    else:
-        # Create output directory
-        path_out_dir = os.path.dirname(path_out)
-        os.system(f'mkdir -p {path_out_dir}')
-
-        # Save unique sequences in a tsv file
-        print('Saving unique sRNAs database into tsv file...')
-        sys.stdout.flush()
-        with open(path_out, 'w') as tsv_file:
-            tsv_file.write('seq\theader\n')
-            for row in cursor:               
-                tsv_file.write(f'{row[0]}\t{row[1]}\n')
-
-        print('DONE!')
-        sys.stdout.flush()
-    
-    finally:
-        # Commit and close database
-        sqliteConnection.commit()
-        sqliteConnection.close()
-
-        # If it fails, exit the program
-        if exit:
-            sys.exit()
-    
-
-def FusionTables (list_abs: list, list_rpms: list, path_write: str,
+def FusionTables (list_abs: list, list_rpm: list, path_write: str,
                   path_metadata: str, mode: str):
     '''
     This function merges all absolute count tables into a single table and all
     RPM tables into another different table. In addition, it also creates a
-    table for both types of counts (Abs and RPMs) by calculating the average
+    table for both types of counts (Abs and RPM) by calculating the average
     of the replicates.
 
     Parameters
     ----------
     list_abs : list
         Absolute paths list of the absolute count table for each library.
-    list_rpms : str
-        Absolute paths list of the RPMs table for each library.
+    list_rpm : str
+        Absolute paths list of the RPM table for each library.
     path_write : str
         Path to the directory where the tables generated in this function
         will be stored.
@@ -1381,19 +1122,19 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
         else:
             # Get project and run name from the path
             path_elements = list_abs[index1].split('/')
-            run_name = path_elements[-1].replace('_tr_si_filtered_abs.csv', '')
+            run_name = path_elements[-1].replace('_tr_abs.csv', '')
         
         print(f'Obtaining metadata of sample: {run_name}', end='')
         sys.stdout.flush()
 
         # Get SRR metadata
         metadata = GetSampleMetadata(path_metadata, run_name)
-
+        print(metadata)
         # If there is no sample metadata, exit.
-        if metadata == []:
+        if len(metadata) == 0:
             print(f'\nERROR:  {run_name} run does not have metadata.\n')
             os.system(f'rm {list_abs[index1].split("/")[-2]}_{mode}.db')
-            os.system(f'rm {list_rpms[index1].split("/")[-2]}_{mode}.db')
+            os.system(f'rm {list_rpm[index1].split("/")[-2]}_{mode}.db')
             return
       
         # Build the sample name with the metadata using the informative variables
@@ -1433,7 +1174,7 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
         red_sample_list.append(new_red_name)
         print(f' ({new_red_name})')
 
-        # Condition name. Necessary to create the tables with the abs and RPMs averages
+        # Condition name. Necessary to create the tables with the abs and RPM averages
         new_red_con = f't_{str(condition_num)}_r'
         if new_red_con not in red_condition_dic:
             red_condition_dic[new_red_con] =  con_name
@@ -1447,14 +1188,14 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
         sys.stdout.flush()
         Insert2Database(db_abs_name, new_red_name, list_abs[index1], 'counts_abs')
 
-        ## 3. LOAD RPMs TABLE INTO CORRESPONDING SQLITE DATABASE
+        ## 3. LOAD RPM TABLE INTO CORRESPONDING SQLITE DATABASE
         #######################################################################
         # Extract name of the database to be created (project)
-        db_rpms_name = f'{list_rpms[index1].split("/")[-2]}_{mode}.db' # ej. PRJNA277424_rpms_RF.db
-        # Insert RPMs of each sample in db (1 sample = 1 table in db)
-        print(f'Inserting {sample_name} table in database (RPMs)...')
+        db_rpm_name = f'{list_rpm[index1].split("/")[-2]}_{mode}.db' # ej. PRJNA277424_rpm_RF.db
+        # Insert RPM of each sample in db (1 sample = 1 table in db)
+        print(f'Inserting {sample_name} table in database (RPM)...')
         sys.stdout.flush()
-        Insert2Database(db_rpms_name, new_red_name, list_rpms[index1], 'counts_rpms')
+        Insert2Database(db_rpm_name, new_red_name, list_rpm[index1], 'counts_rpm')
         
     
     ## 4. JOIN THE DIFFERENT REPLICATES OF EACH CONDITION IN A SINGLE TABLE
@@ -1462,9 +1203,9 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
     print('Joining samples of the same condition (Replicates)...')
     sys.stdout.flush()
 
-    # Tuple with the arguments of the MergeCountsTables function for Abs and RPMs.
+    # Tuple with the arguments of the MergeCountsTables function for Abs and RPM.
     list_args_merge_rep = [(db_abs_name, red_sample_list, 'counts', 'replicates', mode),
-                        (db_rpms_name, red_sample_list, 'RPMs', 'replicates', mode)]          
+                        (db_rpm_name, red_sample_list, 'RPM', 'replicates', mode)]          
     MergeCountsTablesPROCESSING(list_args_merge_rep)
     print('DONE!\n')
     sys.stdout.flush()
@@ -1476,9 +1217,9 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
     print('Joining condition tables...')
     sys.stdout.flush()
 
-    # Tuple with the arguments of the MergeCountsTables function for Abs and RPMs.
+    # Tuple with the arguments of the MergeCountsTables function for Abs and RPM.
     list_args_merge_con = [(db_abs_name, red_sample_list, 'counts', 'conditions', 'outer'),
-                        (db_rpms_name, red_sample_list, 'RPMs', 'conditions', 'outer')]
+                        (db_rpm_name, red_sample_list, 'RPM', 'conditions', 'outer')]
                     
     MergeCountsTablesPROCESSING(list_args_merge_con)
     
@@ -1501,9 +1242,9 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
     print('Saving tables resulting from the joining process in a csv file (Absolute Counts)...')
     Sql2Csv(db_abs_name, final_table, path_write_abs, red_sample_list, red_sample_dic)
 
-    # RPMs
-    print('Saving tables resulting from the joining process in a csv file (RPMs)...')
-    Sql2Csv(db_rpms_name, final_table, path_write_rpm, red_sample_list, red_sample_dic)
+    # RPM
+    print('Saving tables resulting from the joining process in a csv file (RPM)...')
+    Sql2Csv(db_rpm_name, final_table, path_write_rpm, red_sample_list, red_sample_dic)
     sys.stdout.flush()
 
 
@@ -1520,10 +1261,10 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
     sys.stdout.flush()
     RepCountsAvg(db_abs_name, final_table, final_table + '_avg')
 
-    # RPMs
-    print('Calculating average of replicates of each condition(RPMs)...')
+    # RPM
+    print('Calculating average of replicates of each condition(RPM)...')
     sys.stdout.flush()
-    RepCountsAvg(db_rpms_name, final_table, final_table + '_avg')
+    RepCountsAvg(db_rpm_name, final_table, final_table + '_avg')
     print("DONE!\n")
     sys.stdout.flush()
 
@@ -1534,17 +1275,17 @@ def FusionTables (list_abs: list, list_rpms: list, path_write: str,
     sys.stdout.flush()
     Sql2Csv(db_abs_name, final_table + '_avg', path_write_mean_abs, list_condition, red_condition_dic)
 
-    # RPMs
-    print('\nSaving AVG-RPMs tables in a csv file...')
+    # RPM
+    print('\nSaving AVG-RPM tables in a csv file...')
     sys.stdout.flush()          
-    Sql2Csv(db_rpms_name, final_table + '_avg', path_write_mean_rpm, list_condition, red_condition_dic)
+    Sql2Csv(db_rpm_name, final_table + '_avg', path_write_mean_rpm, list_condition, red_condition_dic)
     print('Files saved!\n')
     sys.stdout.flush()
 
     ## 8. DELETE DATABASES AFTER USE
     ###########################################################################
     os.system(f'rm {list_abs[index1].split("/")[-2]}_{mode}.db')
-    os.system(f'rm {list_rpms[index1].split("/")[-2]}_{mode}.db')
+    os.system(f'rm {list_rpm[index1].split("/")[-2]}_{mode}.db')
     
     
 ## MAIN PROGRAM
@@ -1553,40 +1294,29 @@ def main():
     '''
     Main program
     '''
-    
     parser = argparse.ArgumentParser(prog='FILTAB V2', 
-                                     description='''This program creates a database \
-                                     of unique sRNA sequence specific of species, filter \
-                                     and rename the sRNA sequences of each library, filter by \
-                                     RNAcentral (optional), create the absolute and RPMs table of each library, \
-                                     and join the all the tables in one only table.''',  
+                                     description='''This program filters sRNA \
+                                        sequences using RNAcentral to discard \
+                                        rRNA, tRNA, snRNA and snoRNA sequences \
+                                        present in the libraries of a specific \
+                                        project, generates tables of absolute \
+                                        counts and reads per million for each \
+                                        of them, and then joins these tables \
+                                        to form a single table for the project.''',  
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
-    parser.add_argument('-s', '--path-species', type=str, nargs=1,  
-                        help='Absolute path of species libraries folder.')
+    parser.add_argument('-p', '--path-project', type=str, nargs=1,  
+                        help='Absolute path of project libraries folder.')
     parser.add_argument('-r', '--path-results', type=str, nargs=1, 
                         help='Absolute path of results folder.')
-    parser.add_argument('-m', '--max-digits', type=int, nargs='?', const=8, default=8,
-                        help='Maximum number of digits that make up the sRNA \
-                        unique identifier (default: %(default)s)')
     parser.add_argument('-t', '--threads', type=int, nargs='?', const=1, default=1,
                         help='Number of threads (default: %(default)s)')
-    parser.add_argument('-c', '--create-database', type=str, nargs='?', default='yes',  
-                        help='Specifies if you want to create a database \
-                        of sRNAs for each species (yes) or if you want to use a \
-                        previously created one (no) (default: %(default)s)')
-    parser.add_argument('-d', '--path-database', type=str, nargs=1,  
-                        help='Absolute path of sRNAs database. if --create-database is \
-                        "no", this path will correspond to the location of the \
-                        perviouslyu created database. On the other hand, if \
-                        --create-database is "yes", this path will be the location \
-                        where the databases created by this program will be saved.')
     parser.add_argument('-x', '--path-metadata', type=str, nargs=1,  
                         help='Absolute path of metadata samples table.')
     parser.add_argument('-z', '--path-rnacentral', type=str, nargs=1,  
                         help='Absolute path of RNAcentral database.')
 
-    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+    parser.add_argument('--version', action='version', version='%(prog)s 2.0')
     
     args = parser.parse_args()
     
@@ -1599,13 +1329,10 @@ def main():
     ###########################################################################
 
     try:
-        path_all_databases = args.path_database[0]
-        path_species_dir = args.path_species[0]
+        path_project_dir = args.path_project[0]
         path_res = args.path_results[0]
-        max_digits = args.max_digits
         num_process = args.threads
         path_metadata = args.path_metadata[0]
-        create_database = args.create_database
     except:
         print('ERROR: You have inserted a wrong parameter or you are missing a parameter.')
         parser.print_help()
@@ -1640,329 +1367,178 @@ def main():
                       ' --large-index ' + path_RNAcentral + ' ' + path_index +
                       'rnacentral')
 
-
-    ## 1.3 CHECK IF A sRNAs DATABASE HAS TO BE CREATED
-    ###########################################################################
-    # --create-database must be "no" or "yes".
-    if create_database.lower() != 'no' and create_database.lower() != 'yes':
-        print('ERROR: --create-database parameter wrong inserted. Must be "yes" or "no".')
-        parser.print_help()
-        sys.exit()
+    #######################################################################
+    #                   4. CALCULATE ABSOLUTE COUNTS AND RPM             #
+    #######################################################################
     
-    # If "no", use the previously created database (D=1).
-    elif create_database == 'no':
-        print('\nIMPORTANT: sRNAs Database has been inserted.')
-        D = 1
-    # If "yes", create a new database (D=0)
-    else:
-        print('\nIMPORTANT: No sRNAs database has been inserted.')
-        D = 0
+    # Get the path of the directory in which the trimmed libraries are stored
+    path_lib = os.path.dirname(os.path.dirname(path_project_dir))
     
-    # Get species name and libraries
-    path_lib = os.path.dirname(os.path.dirname(path_species_dir))
-    species = os.path.basename(path_species_dir) 
+    # Get the project and the species name
+    project = os.path.basename(path_project_dir)
+    species = os.path.basename(os.path.dirname(path_project_dir))
     
-    ###########################################################################
-    #                           2. species sRNAs DATABASE                      #
-    ###########################################################################
+    if R == 1:
+        
+        ### 4.A.1. FILTER BY RNACENTRAL
+        ###################################################################
 
-    ## 2.1. INSERT species LIBRARIES INTO THE DATABASE
-    ###########################################################################
+        ## Input path
+        path_read = path_project_dir
 
-    ## Projects list
-    Allprojects_list = os.listdir(path_species_dir)
+        ## Set suffix for directories
+        suffix = '_RF'
+
+        ## Output path
+        folder_write = '05-RNAcentral_filtered'
+        path_write = f'{path_lib}/{folder_write}/{species}{suffix}/{project}{suffix}'
     
-    ## List of the SQLite tables in which the sequences of each library
-    ## will be stored.
-    species_table_list = []
+        ## List of input fasta files
+        fasta_files_list = []
+        fasta_files = os.listdir(path_read)
+        for file in fasta_files:
+            path_fasta_files = f'{path_read}/{file}'
+            if file.endswith('.fasta') or file.endswith('.fa'):
+                fasta_files_list.append(path_fasta_files)
+        
+        ## Filter by RNAcentral
+        print('\nFILTER BY RNAcentral DATABASE.\n')
+        print('Filtering...\n')
+        sys.stdout.flush()
+        FilterByRNAcentral(fasta_files_list, RNAcentral_dir, path_write)
+    
+    elif R == 0:
 
-    print(f'\n\nINSERTING {species.upper()} LIBRARIES INTO SQLITE DATABASE.')
+        ### 4.A.2. DO NOT FILTER BY RNACENTRAL
+        ###################################################################
+
+        ## Set suffix for directories
+        suffix = ''
+
+        ## Input path for the following section
+        path_write = path_project_dir
+
+
+    ### 4.B. CALCULATE ABSOLUTE COUNTS
+    #######################################################################
+    
+    ## Create new output path (absolute counts)
+    folder_write_abs = f'01-Absolute_counts{suffix}'
+    path_write_abs = f'{path_res}/{folder_write_abs}/{species}_abs{suffix}/{project}_abs{suffix}'
+
+    ## Get input path
+    path_read_abs = path_write
+
+    ## List of input fasta files
+    fasta_read_abs_list = os.listdir(path_read_abs)
+    for file in fasta_read_abs_list:
+        if file.endswith('.fasta') or file.endswith('.fa'):
+            continue
+        else:
+            fasta_read_abs_list.remove(file)
+    
+    ## Create output directory
+    print('\nCREATING THE ABSOLUTE COUNT TABLE OF EACH LIBRARY.\n')
+    print('Building the directory...\n')
+    sys.stdout.flush()
+    try:
+        os.makedirs(path_write_abs)
+    except FileExistsError:
+        print(f'The folder {path_write_abs.split("/")[-2]} already exists.')
+        pass
+    
+    ## Get absolute counts for each library
+    print('\nCalculating the absolute counts...')
+    sys.stdout.flush()
+    t_ini = time()
+    AllAbsoluteCountsPROCESSING(fasta_read_abs_list, path_read_abs, path_write_abs, num_process)
+    t_end = time()
+    print('Time: %.3f s' % (t_end - t_ini))
     sys.stdout.flush()
 
-    ## Iterate projects list
-    for project in Allprojects_list:
-
-        # Project directory path
-        path_project_dir = f'{path_species_dir}/{project}/'
-
-        # Files list
-        files_list = os.listdir(path_project_dir)
-
-        # Remove non-fasta files from the list
-        libraries_list = []
-        for file in files_list:
-            if file.endswith('.fa') or file.endswith('.fasta'):
-                libraries_list.append(file)
-        
-        # Iterate libraries list
-        tsv_list =  []
-        for fasta in libraries_list:            
-            # File name
-            file_name = fasta[:-6]
-            species_table_list.append(file_name)
-            # Tsv file path
-            path_tsv = f'{path_project_dir}/{file_name}.tsv'
-            tsv_list.append(path_tsv)
-
-            print(f'\nInserting {file_name} file...')
-            sys.stdout.flush()
-            
-            # Convert fasta file to tsv.
-            t_ini = time()
-            path_fasta = path_project_dir + fasta
-            Fasta2Csv(path_fasta, "\t", path_tsv)
-
-            # Insert tsv file in database
-            db_name = f'{species}_sRNAs.db'
-            Insert2Database(db_name, file_name, path_tsv, type_data='sequences')
-            t_end = time()
-            print(f'Time: %.3f s' % (t_end - t_ini))
-            
-        
-        # Delete tsv files
-        for tsv_file in tsv_list:
-            os.system(f'rm {tsv_file}')
-
     
-    ## 2.2. OBTAIN UNIQUE SEQUENCES AND CREATE DATABASE (OR LOAD IT)
-    ###########################################################################
-    db_table_name = f'all_sRNA_{species}'
-    path_database =  f'{path_all_databases}/all_sRNA_{species}.tsv'
-
-    ## If the database is not created
-    if D == 0:
-        
-        ## 2.2.1. OBTAIN UNIQUE SEQUENCES
-        print('\nCREATING UNIQUE sRNA SEQUENCES DATABASE OF THE species %s.' % (species.upper()))
-        sys.stdout.flush()
-
-        t_ini = time()
-        CreationUniqueSRNAsDatabase(species_table_list, species, max_digits, path_database, db_name)
-        t_end = time()
-        print('Time: %.3f s' % (t_end - t_ini))
-                                                                    
-    ## If the database is already created
-    else:
-        ## 2.2.2. LOAD PREVIOUSLY CREATED DATABASE IN SQLITE 
-        print('\nREADING THE DATABASE OF UNIQUE SRNAS WITH A UNIQUE IDENTIFIERS.\n')
-        sys.stdout.flush()
-
-        print(f'\nInserting sRNAs database of the species {species} in SQLite ({db_table_name})')
-        # Insertar base de datos
-        db_name = f'{species}_sRNAs.db'
-        Insert2Database(db_name, db_table_name, path_database, type_data='sequences')
-
-    # Iterate projects list
-    for project in Allprojects_list:
-        
-        #######################################################################
-        #                   3. FILTER FASTAs AND RENAME sRNAs                 #
-        #######################################################################
-
-        ## Create output path (trimmed filtered project)
-        species_clean = f'{species}_si_filtered' # arth_si_filtered
-        project_clean = f'{project}_si_filtered' # PRJNAXXXXXX_si_filtered
-        path_project_clean = f'{path_lib}/04-Size_indet_filtered_data/{species_clean}/{project_clean}'
-        
-        ## Get input path (trimmed project)
-        path_project_trim = f'{path_species_dir}/{project}/'
-
-        ## List of input fasta files (trimmed Fasta)
-        files_trim_list = os.listdir(path_project_trim)
-        fasta_tables_list = []
-        for file in files_trim_list:
-            if file.endswith('.fasta') or file.endswith('.fa'):
-                file_name = file[:-6]
-                fasta_tables_list.append(file_name)
-        
-        ## Create output directory
-        print('\nFILTERING THE LIBRARY FASTA FILES AND RENAME THE SRNAS WITH THE DATABASE.')
-        sys.stdout.flush()
-        try:
-            os.makedirs(path_project_clean)
-        except FileExistsError:
-            print(f'The folder {path_project_clean.split("/")[-2]} already exists.')
-            pass
+    ### 4.C. CALCULATE RPM
+    #######################################################################
     
-        
-        ## Filter and rename sequences
-        print('\nFiltering project  %s' % (project))
-        sys.stdout.flush()
-        t_ini = time()
-        FilterLibrariesAndRenameSRNAs(fasta_tables_list, path_project_clean, db_table_name, db_name) 
-        t_end = time()
-        print('Time: %.3f s' % (t_end - t_ini))
-        
-        
-        #######################################################################
-        #                   4. CALCULATE ABSOLUTE COUNTS AND RPMs             #
-        #######################################################################
+    ## Create new output path (RPM)
+    folder_write_rpm = f'02-RPM_counts{suffix}'
+    path_write_rpm = f'{path_res}/{folder_write_rpm}/{species}_rpm{suffix}/{project}_rpm{suffix}'
 
-        if R == 1:
-            
-            ### 4.A.1. FILTER BY RNACENTRAL
-            ###################################################################
+    ## Get input path (absolute counts)
+    path_read_rpm = path_write_abs
 
-            ## Input path
-            path_read = path_project_clean
+    ## List of absolute counts files (input)
+    abs_csv_list = os.listdir(path_read_rpm)
 
-            ## Set suffix for directories
-            suffix = '_RF'
-
-            ## Output path
-            folder_write = '05-RNAcentral_filtered'
-            path_write = f'{path_lib}/{folder_write}/{species}{suffix}/{project}{suffix}'
-        
-            ## List of input fasta files
-            fasta_files_list = []
-            fasta_files = os.listdir(path_read)
-            for file in fasta_files:
-                path_fasta_files = f'{path_read}/{file}'
-                if file.endswith('.fasta') or file.endswith('.fa'):
-                    fasta_files_list.append(path_fasta_files)
-            
-            ## Filter by RNAcentral
-            print('\nFILTER BY RNAcentral DATABASE.\n')
-            print('Filtering...\n')
-            sys.stdout.flush()
-            FilterByRNAcentral(fasta_files_list, RNAcentral_dir, path_write)
-        
-        elif R == 0:
-
-            ### 4.A.2. DO NOT FILTER BY RNACENTRAL
-            ###################################################################
-
-            ## Set suffix for directories
-            suffix = ''
-
-            ## Input path for the following section
-            path_write = path_project_clean
-
-
-        ### 4.B. CALCULATE ABSOLUTE COUNTS
-        #######################################################################
-        
-        ## Create new output path (absolute counts)
-        folder_write_abs = f'01-Absolute_counts{suffix}'
-        path_write_abs = f'{path_res}/{folder_write_abs}/{species}_abs{suffix}/{project}_abs{suffix}'
-
-        ## Get input path
-        path_read_abs = path_write
-
-        ## List of input fasta files
-        fasta_read_abs_list = os.listdir(path_read_abs)
-        for file in fasta_read_abs_list:
-            if file.endswith('.fasta') or file.endswith('.fa'):
-                continue
-            else:
-                fasta_read_abs_list.remove(file)
-        
-        ## Create output directory
-        print('\nCREATING THE ABSOLUTE COUNT TABLE OF EACH LIBRARY.\n')
-        print('Building the directory...\n')
-        sys.stdout.flush()
-        try:
-            os.makedirs(path_write_abs)
-        except FileExistsError:
-            print(f'The folder {path_write_abs.split("/")[-2]} already exists.')
-            pass
-        
-        ## Get absolute counts for each library
-        print('\nCalculating the absolute counts...')
-        sys.stdout.flush()
-        t_ini = time()
-        AllAbsoluteCountsPROCESSING(fasta_read_abs_list, path_read_abs, path_write_abs, num_process)
-        t_end = time()
-        print('Time: %.3f s' % (t_end - t_ini))
-        sys.stdout.flush()
-
-        
-        ### 4.C. CALCULATE RPMs
-        #######################################################################
-        
-        ## Create new output path (RPMs)
-        folder_write_rpms = f'02-RPM_counts{suffix}'
-        path_write_rpms = f'{path_res}/{folder_write_rpms}/{species}_rpm{suffix}/{project}_rpm{suffix}'
-
-        ## Get input path (absolute counts)
-        path_read_rpms = path_write_abs
-
-        ## List of absolute counts files (input)
-        abs_csv_list = os.listdir(path_read_rpms)
-
-        ## Create output directory
-        print('\nCREATING THE RPM TABLE OF EACH LIBRARY.\n')
-        print('Building the directory...\n')
-        sys.stdout.flush()
-        
-        try:
-            os.makedirs(path_write_rpms)
-        except FileExistsError:
-            print(f'The folder {path_write_rpms.split("/")[-2]} already exists.')
-            pass
-        
-        ## Get RPMs for each library
-        print('\nCalculating the RPMs counts...')
-        sys.stdout.flush()
-        t_ini = time()
-        AllRPMCountsPROCESSING(abs_csv_list, path_read_rpms, path_write_rpms, num_process)
-        t_end = time()
-        print('Time: %.3f s' % (t_end - t_ini))
-        sys.stdout.flush()
-            
-        
-        ### 4.D. JOIN ABSOLUTE COUNTS AND RPMS TABLES OF THE DIFFERENT SAMPLES
-        #######################################################################
-        
-        ## Paths
-        path_read_join_abs = path_write_abs
-        path_read_join_rpms = path_write_rpms
-        folder_write_join = f'03-Fusion_count_tables{suffix}'
-        path_write_join = f'{path_res}/{folder_write_join}/{species}_fusionCounts{suffix}/{project}_fusionCounts{suffix}'
-        
-        ## List of the input csv files paths (absolute counts)
-        csv_files_list_abs = []
-        csv_files_abs = os.listdir(path_read_join_abs)
-        for abs_file in csv_files_abs:
-            path_csv_abs_file = f'{path_read_join_abs}/{abs_file}'
-            if abs_file.endswith('.csv'):
-                csv_files_list_abs.append(path_csv_abs_file)
-        
-        ## List of the input csv files paths (RPMs)
-        csv_files_list_rpms = []
-        csv_files_rpms = os.listdir(path_read_join_rpms)
-        for rpms_file in csv_files_rpms:
-            path_csv_rpms_file = f'{path_read_join_rpms}/{rpms_file}'
-            if rpms_file.endswith('.csv'):
-                csv_files_list_rpms.append(path_csv_rpms_file)
-        
-        ## Create output directory
-        print('\nJOINING THE RPMs AND ASBOLUTE TABLES IN TWO TABLES.\n')
-        print('Building the directory...\n')
-        sys.stdout.flush()
-        try:
-            os.makedirs(path_write_join)
-        except FileExistsError:
-            print(f'The folder {path_write_join.split("/")[-2]} already exists.')
-            pass
-
-        # Ruta de los metadatos del proyecto en cuestion
-        path_metadata_abs = f'{path_metadata}/{species}_m_{project}.txt'
-
-        # Join tables
-        print('\nJoining the tables mode = outer between replicates...')
-        sys.stdout.flush()
-        FusionTables (csv_files_list_abs, csv_files_list_rpms, path_write_join, path_metadata_abs, 'outer')
-        print('\nJoining the tables mode = inner between replicates...')
-        sys.stdout.flush()
-        FusionTables (csv_files_list_abs, csv_files_list_rpms, path_write_join, path_metadata_abs, 'inner')
+    ## Create output directory
+    print('\nCREATING THE RPM TABLE OF EACH LIBRARY.\n')
+    print('Building the directory...\n')
+    sys.stdout.flush()
     
-        ###############################################################
-
-    # Remove SQLite database used to rename libraries
-    os.system(f'rm {db_name}')
+    try:
+        os.makedirs(path_write_rpm)
+    except FileExistsError:
+        print(f'The folder {path_write_rpm.split("/")[-2]} already exists.')
+        pass
+    
+    ## Get RPM for each library
+    print('\nCalculating the RPM counts...')
+    sys.stdout.flush()
+    t_ini = time()
+    AllRPMCountsPROCESSING(abs_csv_list, path_read_rpm, path_write_rpm, num_process)
+    t_end = time()
+    print('Time: %.3f s' % (t_end - t_ini))
+    sys.stdout.flush()
         
+    
+    ### 4.D. JOIN ABSOLUTE COUNTS AND RPMS TABLES OF THE DIFFERENT SAMPLES
+    #######################################################################
+    
+    ## Paths
+    path_read_join_abs = path_write_abs
+    path_read_join_rpm = path_write_rpm
+    folder_write_join = f'03-Fusion_count_tables{suffix}'
+    path_write_join = f'{path_res}/{folder_write_join}/{species}/{project}'
+    
+    ## List of the input csv files paths (absolute counts)
+    csv_files_list_abs = []
+    csv_files_abs = os.listdir(path_read_join_abs)
+    for abs_file in csv_files_abs:
+        path_csv_abs_file = f'{path_read_join_abs}/{abs_file}'
+        if abs_file.endswith('.csv'):
+            csv_files_list_abs.append(path_csv_abs_file)
+    
+    ## List of the input csv files paths (RPM)
+    csv_files_list_rpm = []
+    csv_files_rpm = os.listdir(path_read_join_rpm)
+    for rpm_file in csv_files_rpm:
+        path_csv_rpm_file = f'{path_read_join_rpm}/{rpm_file}'
+        if rpm_file.endswith('.csv'):
+            csv_files_list_rpm.append(path_csv_rpm_file)
+    
+    ## Create output directory
+    print('\nJOINING THE RPM AND ASBOLUTE TABLES IN TWO TABLES.\n')
+    print('Building the directory...\n')
+    sys.stdout.flush()
+    try:
+        os.makedirs(path_write_join)
+    except FileExistsError:
+        print(f'The folder {path_write_join.split("/")[-2]} already exists.')
+        pass
 
+    # Ruta de los metadatos del proyecto en cuestion
+    path_metadata_abs = f'{path_metadata}/{species}_m_{project}.txt'
+
+    # Join tables
+    print('\nJoining the tables mode = outer between replicates...')
+    sys.stdout.flush()
+    FusionTables (csv_files_list_abs, csv_files_list_rpm, path_write_join, path_metadata_abs, 'outer')
+    print('\nJoining the tables mode = inner between replicates...')
+    sys.stdout.flush()
+    FusionTables (csv_files_list_abs, csv_files_list_rpm, path_write_join, path_metadata_abs, 'inner')
+
+    ###############################################################
+        
 ## CALL THE MAIN PROGRAM
 
 if __name__ == '__main__':
