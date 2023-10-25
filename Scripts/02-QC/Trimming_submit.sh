@@ -22,11 +22,9 @@
 #******************************************************************************
 
 # Paths
-path_in="/storage/ncRNA/Projects/TFM_AntonioG/Libraries/Metaanalysis_miRNA_anterior/01-Raw_data/Illumina"
-path_out="/storage/ncRNA/Projects/tsRNA_project/Libraries/clean_data"
-path_adapters="/storage/ncRNA/Projects/tsRNA_project/Additional_data/all_adapters.fa"
-
-echo -e "\nStarting with directory Metaanalysis_miRNA_anterior/01-Raw_data/Illumina..."
+path_in=/storage/ncRNA/Projects/sRNA_project/03-Raw_data
+path_out=/home/gonsanan/miRNAs_srp_project/Libraries/01-Trimmed_data_20_25nt
+path_adapters=/storage/ncRNA/Projects/TFM_AntonioG/Additional_info/Metaanalysis_miRNA/02-Trimming/01-Trimming_adapters/all_adapters.fa
 
 # List species directories
 species_list=$( ls -d1 $path_in/* )
