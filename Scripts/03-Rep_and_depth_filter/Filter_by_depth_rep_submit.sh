@@ -28,7 +28,7 @@ source activate sRNA_project
 
 # Paths
 path_in=/home/gonsanan/miRNAs_srp_project/Libraries/01-Trimmed_data_20_25nt
-path_out=/home/gonsanan/miRNAs_srp_project/Libraries/03-Trimmed_DepthAndRep_filtered
+path_out=/home/gonsanan/miRNAs_srp_project/Libraries/02-Trimmed_DepthAndRep_filtered
 path_out_sum=/home/gonsanan/miRNAs_srp_project/Additional_data/01-Trimmed_DepthAndRep_filtered
 path_metadata_dir=/storage/ncRNA/Projects/sRNA_project/02-Metadata
 
@@ -54,6 +54,7 @@ do
                 -r 2 \
                 -p $SLURM_CPUS_PER_TASK &
     done
+done
 wait
 
 # Concatenate files with the results of each specie
