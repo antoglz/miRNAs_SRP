@@ -471,7 +471,7 @@ def main():
     summary_s_path = f'{path_out_sum}/{species}_{project}_sum_libraries.tsv'
 
     # Check if the project metadata file exists
-    project_met_path = f'{path_metadata_dir}/{species}_m_{project}.tsv'
+    project_met_path = f'{path_metadata_dir}/{species}_m_{project}.txt'
     if os.path.exists(project_met_path):
 
         ## 2. CHECK AND FILTER BY SEQUENCING DEPTH
