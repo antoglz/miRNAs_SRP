@@ -467,11 +467,11 @@ def main():
     species = os.path.basename(os.path.dirname(path_project))
 
     # Create output summary paths
-    results_s_path = f'{path_out_sum}/{species}_{project}_sum_projects.txt'
-    summary_s_path = f'{path_out_sum}/{species}_{project}_sum_libraries.txt'
+    results_s_path = f'{path_out_sum}/{species}_{project}_sum_projects.tsv'
+    summary_s_path = f'{path_out_sum}/{species}_{project}_sum_libraries.tsv'
 
     # Check if the project metadata file exists
-    project_met_path = f'{path_metadata_dir}/{species}_m_{project}.txt'
+    project_met_path = f'{path_metadata_dir}/{species}_m_{project}.tsv'
     if os.path.exists(project_met_path):
 
         ## 2. CHECK AND FILTER BY SEQUENCING DEPTH
