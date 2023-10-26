@@ -258,7 +258,7 @@ exploratoryAnalysis <- function(dds, path_out, file_name){
   ### 1.1 VST NORMALIZATION 
   # Absolute counts normalization
   deseqds <- suppressMessages(DESeq2::estimateSizeFactors(dds))
-  assay(deseqds, 'counts.norm.VST') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind=F)))
+  assay(deseqds, 'counts.norm.VST') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind=T)))
   
   ### 1.2 MEAN VS VARIANCE PLOT
   png(file = paste(path_out, '/', file_name, '_meanvsvar.png', sep=''),
