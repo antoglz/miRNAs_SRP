@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=Filter_lib      	# Job name to show with squeue
 #SBATCH --output=Filter_lib_%j.out 	# Output file
-#SBATCH --ntasks=52             	# Maximum number of cores to use
+#SBATCH --ntasks=90             	# Maximum number of cores to use
 #SBATCH --time=1-00:00:00         	# Time limit to execute the job
 #SBATCH --mem-per-cpu=2G        	# Required Memory per core
 #SBATCH --cpus-per-task=2       	# CPUs assigned per task.
@@ -10,7 +10,7 @@
 
 #******************************************************************************
 #  
-#  03-Filter_by_depth_rep_submit.sh
+#  Filter_by_depth_rep_submit.sh
 #
 #  This program executes the 03-Filter_by_depth_rep.py program in parallel to
 #  filter the libraries of the different species at the same time. In addition,
@@ -24,13 +24,13 @@
 
 # Modules
 module load anaconda
-source activate tsRNA_project
+source activate sRNA_project
 
 # Paths
-path_in=/storage/ncRNA/Projects/tsRNA_project/Libraries/cleanData
-path_out=/storage/ncRNA/Projects/tsRNA_project/Libraries/Trimmed_DepthAndRep_filtered
-path_out_sum=/storage/ncRNA/Projects/tsRNA_project/Additional_data/DepthAndRep_filtered
-path_metadata_dir=/storage/ncRNA/Projects/TFM_AntonioG/Additional_info/Metaanalysis_miRNA/01-Sra_info/Metaanalysis_miRNA/Standardised_metadata
+path_in=/home/gonsanan/miRNAs_srp_project/Libraries/01-Trimmed_data_20_25nt
+path_out=/home/gonsanan/miRNAs_srp_project/Libraries/03-Trimmed_DepthAndRep_filtered
+path_out_sum=/home/gonsanan/miRNAs_srp_project/Additional_data/01-Trimmed_DepthAndRep_filtered
+path_metadata_dir=/storage/ncRNA/Projects/sRNA_project/02-Metadata
 
 # List all species paths and names
 species_list=$( ls -d1 $path_in/* )

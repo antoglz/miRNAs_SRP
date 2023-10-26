@@ -3,7 +3,7 @@
 
 #******************************************************************************
 #  
-#   03-Filter_by_depth_rep.py
+#   Filter_by_depth_rep.py
 #
 #   This program filters the libraries of a given project by selecting those 
 #   that exceed the minimum thresholds of sequencing depth and number of
