@@ -94,7 +94,7 @@ FastpTrimming(){
 
     # Trimming
     ## Paired end
-    if echo $file | grep -q "_1.fastq.gz";
+    if [[ "$file" == *_1.fastq.gz ]];
     then
         fastp --adapter_fasta $path_adapters \
             -i $path_in_dir/$srr"_1.fastq.gz" -I $path_in_dir/$srr"_2.fastq.gz" \
@@ -105,7 +105,7 @@ FastpTrimming(){
             --length_limit $max_len --n_base_limit 1
 
     ## Single end
-    elif echo $file | grep -q ".fastq.gz";
+    elif [[ "$file" != *_2.fastq.gz ]];
     then
         fastp --adapter_fasta $path_adapters \
             -i $path_in \
@@ -133,7 +133,7 @@ main () {
     mkdir -p $path_out_project
 
     # List and iterate fastq files of the project
-    fastq_list=$( ls -d1 $path_in/* )
+    fastq_list=$( ls -d1 $path_in/*fastq.gz )
     for fastq in $fastq_list
     do
         # Trimming
