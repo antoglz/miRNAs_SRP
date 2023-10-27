@@ -410,7 +410,6 @@ species <- basename(dirname(path_project))
 # Create output paths
 path_raw_out <- paste(path_out, '01-DEA_raw', species, project, sep = '/')
 path_sig_out <- paste(path_out, '02-DEA_sig', species, project, sep = '/')
-path_nosig_out <- paste(path_out, '03-DEA_nosig', species, project, sep = '/')
 
 # List project files
 files_list <- list.files(path = path_outer)
@@ -447,7 +446,6 @@ for (file in files_list){
     if (!dir.exists(path_raw_out)) {
       dir.create(path_raw_out, recursive = TRUE, showWarnings = FALSE)
       dir.create(path_sig_out, recursive = TRUE, showWarnings = FALSE)
-      dir.create(path_nosig_out, recursive = TRUE, showWarnings = FALSE)
     }
     
     # Differential expression analysis
@@ -475,13 +473,6 @@ for (file in files_list){
           as_tibble() %>%
           dplyr::filter(padj <= alpha_value)
         
-        # Extracting non-significant miRNAs.
-        final_res_nosig <- final_res %>% 
-          data.frame() %>%
-          rownames_to_column(var = 'seq') %>%
-          as_tibble() %>%
-          dplyr::filter(padj > alpha_value)
-        
         ### RESULTS TABLES
         # Save raw final results
         final_res <- rownames_to_column(as.data.frame(final_res), var = 'seq')
@@ -491,10 +482,6 @@ for (file in files_list){
         # Save significant final results
         path_file_sig_out <- paste(path_sig_out,paste(new_file,'_', i,'_dea_sig.csv', sep=''),sep='/')
         write.csv(as.data.frame(final_res_sig), file=path_file_sig_out, quote=FALSE, row.names = FALSE)
-        
-        # Save significant final results
-        path_file_nosig_out <- paste(path_nosig_out,paste(new_file,'_', i,'_dea_nosig.csv', sep=''),sep='/')
-        write.csv(as.data.frame(final_res_nosig), file=path_file_nosig_out, quote=FALSE, row.names = FALSE)
         
         ### SUMMARY TABLE ###
         # Get experiment
