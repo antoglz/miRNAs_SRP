@@ -58,16 +58,16 @@ done
 wait
 
 # Concatenate files with the results of each specie
-awk '{ print $1,$2,$3,$4}' $path_out_sum/*_sum_projects.tsv > $path_out_sum/sum_projects_temp.tsv
+awk '{ print $1"\t"$2"\t"$3"\t"$4}' $path_out_sum/*_sum_projects.tsv > $path_out_sum/sum_projects_temp.tsv
 sort -t$'\t' -k1,1 -k2  -n $path_out_sum/sum_projects_temp.tsv > $path_out_sum/sum_projects.tsv
-sed -i '1s/^/Specie Project Filtered Excluded\n/' $path_out_sum/sum_projects.tsv
+sed -i '1s/^/Specie\tProject\tFiltered\tExcluded\n/' $path_out_sum/sum_projects.tsv
 
 # Concatenate summary files of filtered and excluded libraries
 [ `ls -1 $path_out_sum/*_sum_libraries.tsv 2>/dev/null | wc -l ` -gt 0 ] && awk '{print}' $path_out_sum/*_sum_libraries.tsv > $path_out_sum/sum_libraries_temp.tsv
 sort -t$'\t' -k1 -n $path_out_sum/sum_libraries_temp.tsv > $path_out_sum/sum_libraries.tsv
 
 # Remove specie files
-rm -f $path_out_sum/*_sum_results.tsv
+rm -f $path_out_sum/*_sum_projects.tsv
 rm -f $path_out_sum/*_sum_libraries.tsv
 rm -f $path_out_sum/*_temp.tsv
 
