@@ -1368,12 +1368,13 @@ def main():
                       'rnacentral')
 
     #######################################################################
-    #                   4. CALCULATE ABSOLUTE COUNTS AND RPM             #
+    #                   4. CALCULATE ABSOLUTE COUNTS AND RPM              #
     #######################################################################
     
     # Get the path of the directory in which the trimmed libraries are stored
-    path_lib = os.path.dirname(os.path.dirname(path_project_dir))
-    
+    path_project_split = path_project_dir.split("Libraries")
+    path_lib = path_project_split[0] + "Libraries"
+
     # Get the project and the species name
     project = os.path.basename(path_project_dir)
     species = os.path.basename(os.path.dirname(path_project_dir))
@@ -1390,8 +1391,9 @@ def main():
         suffix = '_RF'
 
         ## Output path
-        folder_write = '05-RNAcentral_filtered'
+        folder_write = '03-RNAcentral_filtered'
         path_write = f'{path_lib}/{folder_write}/{species}{suffix}/{project}{suffix}'
+        print(f'Path_write: {path_write}')
     
         ## List of input fasta files
         fasta_files_list = []

@@ -2,10 +2,10 @@
 
 #SBATCH --job-name=counts_d         # Job name to show with squeue
 #SBATCH --output=counts_d_%j.out    # Output file
-#SBATCH --ntasks=4                 # Maximum number of cores to use
+#SBATCH --ntasks=25                 # Maximum number of cores to use
 #SBATCH --time=07-00:00:00          # Time limit to execute the job
 #SBATCH --mem-per-cpu=2G            # Required Memory per core
-#SBATCH --cpus-per-task=20          # CPUs assigned per task.
+#SBATCH --cpus-per-task=6           # CPUs assigned per task.
 #SBATCH --qos=medium                # QoS: short,medium,long,long-mem
 
 #******************************************************************************
@@ -26,19 +26,16 @@
 
 # Modules
 module load anaconda
-source activate tsRNA_project
+source activate sRNA_project
 
 # Paths
-path_lib=/storage/ncRNA/Projects/tsRNA_project/Libraries/Trimmed_DepthAndRep_N_filtered
-path_results=/storage/ncRNA/Projects/tsRNA_project/Results/Counts
-path_metadata=/storage/ncRNA/Projects/TFM_AntonioG/Additional_info/Metaanalysis_miRNA/01-Sra_info/Metaanalysis_miRNA/Standardised_metadata
-path_rnacentral=""
-
-# Other variables
-threads=20
+path_lib=/home/gonsanan/miRNAs_srp_project/Libraries/02-Trimmed_DepthAndRep_filtered/fasta
+path_results=/home/gonsanan/miRNAs_srp_project/Results
+path_metadata=/storage/ncRNA/Projects/sRNA_project/02-Metadata
+path_rnacentral=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_filtering/01-RNAcentral/rnacentral_plants_filtered.fasta
 
 # List all species paths and names
-species_list=$( ls -d1 $path_in/* )
+species_list=$( ls -d1 $path_lib/* )
 
 # Iterate specie list
 for species in $species_list
@@ -53,7 +50,7 @@ do
         srun -N1 -n1 -c$SLURM_CPUS_PER_TASK --quiet --exclusive python3 sRNA_counts.py \
             --path-project $project \
             --path-results $path_results \
-            --threads $threads \
+            --threads $SLURM_CPUS_PER_TASK \
             --path-metadata $path_metadata \
             --path-rnacentral $path_rnacentral &
     done
