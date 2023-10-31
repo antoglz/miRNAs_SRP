@@ -472,12 +472,12 @@ def main():
         sys.exit()
     
 
-    # Create temporary directory
-    os.system('mkdir -p tmp')
-
     # Get the project and the species name
     project = os.path.basename(path_project_counts).replace("_fusionCounts_RF", "")
     species = os.path.basename(os.path.dirname(path_project_counts)).replace("_fusionCounts_RF", "")
+
+    # Create temporary directory
+    os.system(f'mkdir -p ./tmp_{project}')
 
     # Get project name and path
     path_table = f'{path_project_counts}/fusion_abs-outer.csv'
@@ -493,7 +493,7 @@ def main():
         columns = file.readline().rstrip().split(",")
 
     # Insert counts table into SQLite database
-    id_dic = Insert2Database(f'./tmp/{project}_database.db', table_name, path_table, columns)
+    id_dic = Insert2Database(f'./tmp_{project}/{project}_database.db', table_name, path_table, columns)
 
     # Obtain subprojects groups
     project_metadata = f'{metadata}/{species}_m_{project}.txt'
@@ -506,10 +506,10 @@ def main():
     # Write the subprojects in different files
     for i, group in enumerate(groups_list):
         file_path_out = f'{project_path_out}/{project}_{str(i + 1)}.csv'
-        Sql2Csv(f'./tmp/{project}_database.db', table_name, file_path_out, group, id_dic)
+        Sql2Csv(f'./tmp_{project}/{project}_database.db', table_name, file_path_out, group, id_dic)
 
     # Delete SQlite database
-    os.system(f'rm -f -r ./tmp')
+    os.system(f'rm -f -r ./tmp_{project}')
     print(f'{project} ({species}) done!')
 
 ## CALL THE MAIN PROGRAM

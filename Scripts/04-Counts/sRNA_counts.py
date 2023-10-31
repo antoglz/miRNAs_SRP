@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 #******************************************************************************
 #  
 #   04-Counts_and_sRNADatabase.py
@@ -672,7 +671,7 @@ def FilterByRNAcentral(library_list: list, Rnacentral_dir: str,
         name = name_filtered.split('_')[0] # SRRXXXXXXX
 
         # Execute Bowtie
-        os.system(f'bowtie {Rnacentral_dir}/Index/rnacentral --best -v 0 -k 1 --norc -f {library} -S {name}.sam --al {name}_RNAcentral_aligned.fasta --un ./../{name}_RNAcentral_filtered.fasta')
+        os.system(f'bowtie -x {Rnacentral_dir}/Index/rnacentral --best -v 0 -k 1 --norc -f {library} -S {name}.sam --al {name}_RNAcentral_aligned.fasta --un ./../{name}_RNAcentral_filtered.fasta')
     
         # Number of reads that have aligned with the database
         try:
@@ -1071,6 +1070,7 @@ def ParseFastaFile(fasta_file: str) -> None:
         print('Error. Check that the files entered are fasta')
         sys.exit()
 
+
 def FusionTables (list_abs: list, list_rpm: list, path_write: str,
                   path_metadata: str, mode: str):
     '''
@@ -1102,6 +1102,12 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
     con_num_dic = {}
     con_count = 1
 
+    # Get project name
+    project_name = list_abs[0].split("/")[-2].split('_')[0]
+
+    # Create temporary directory
+    os.system(f'mkdir -p ./tmp_{project_name}')
+
     # Get informative variables from the project metadata (columns from 0-n)
     inf_var = GetInformativeVariables(path_metadata)
 
@@ -1129,12 +1135,10 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
 
         # Get SRR metadata
         metadata = GetSampleMetadata(path_metadata, run_name)
-        print(metadata)
+        
         # If there is no sample metadata, exit.
         if len(metadata) == 0:
             print(f'\nERROR:  {run_name} run does not have metadata.\n')
-            os.system(f'rm {list_abs[index1].split("/")[-2]}_{mode}.db')
-            os.system(f'rm {list_rpm[index1].split("/")[-2]}_{mode}.db')
             return
       
         # Build the sample name with the metadata using the informative variables
@@ -1182,7 +1186,7 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
         ## 2. LOAD ABSOLUTE COUNTS TABLE INTO CORRESPONDING SQLITE DATABASE
         #######################################################################
         # Extract name of the database to be created (project)
-        db_abs_name = f'{list_abs[index1].split("/")[-2]}_{mode}.db' # ej. PRJNA277424_abs_RF.db
+        db_abs_name = f'./tmp_{project_name}/{list_abs[index1].split("/")[-2]}_{mode}.db' # ej. PRJNA277424_abs_RF.db
         # Insert absolute counts of each sample in db (1 sample = 1 table in db)
         print(f'Inserting {sample_name} table in database (Absolute Counts)...')
         sys.stdout.flush()
@@ -1191,7 +1195,7 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
         ## 3. LOAD RPM TABLE INTO CORRESPONDING SQLITE DATABASE
         #######################################################################
         # Extract name of the database to be created (project)
-        db_rpm_name = f'{list_rpm[index1].split("/")[-2]}_{mode}.db' # ej. PRJNA277424_rpm_RF.db
+        db_rpm_name = f'./tmp_{project_name}/{list_rpm[index1].split("/")[-2]}_{mode}.db' # ej. PRJNA277424_rpm_RF.db
         # Insert RPM of each sample in db (1 sample = 1 table in db)
         print(f'Inserting {sample_name} table in database (RPM)...')
         sys.stdout.flush()
@@ -1284,9 +1288,8 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
 
     ## 8. DELETE DATABASES AFTER USE
     ###########################################################################
-    os.system(f'rm {list_abs[index1].split("/")[-2]}_{mode}.db')
-    os.system(f'rm {list_rpm[index1].split("/")[-2]}_{mode}.db')
-    
+    os.system(f'rm -r ./tmp_{project_name}')
+
     
 ## MAIN PROGRAM
 
@@ -1393,7 +1396,6 @@ def main():
         ## Output path
         folder_write = '03-RNAcentral_filtered'
         path_write = f'{path_lib}/{folder_write}/{species}{suffix}/{project}{suffix}'
-        print(f'Path_write: {path_write}')
     
         ## List of input fasta files
         fasta_files_list = []
@@ -1535,9 +1537,6 @@ def main():
     print('\nJoining the tables mode = outer between replicates...')
     sys.stdout.flush()
     FusionTables (csv_files_list_abs, csv_files_list_rpm, path_write_join, path_metadata_abs, 'outer')
-    print('\nJoining the tables mode = inner between replicates...')
-    sys.stdout.flush()
-    FusionTables (csv_files_list_abs, csv_files_list_rpm, path_write_join, path_metadata_abs, 'inner')
 
     ###############################################################
         
