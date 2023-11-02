@@ -3,7 +3,7 @@
 ##                                                                            
 ##  06-Diff_exp_analysis.r                                                          
 ##                                                                            
-##  1. Exploratory analysis  
+##  1. Exploratory analysis
 ##
 ##  This programm takes the absolute count tables (INNER) of each project to
 ##  perform a Principal Component Analysis. From the results of this analysis,
@@ -28,7 +28,7 @@
 ##  results() function of DESeq2 together with the log2FoldChange and lfcSE
 ##  from lfcShrink. In addition to the raw data obtained in the analysis,
 ##  this script also provides tables with those sequences with an adjusted
-##  p-value lower than 0.05.             
+##  p-value lower than 0.05.
 ##                                                                            
 ##                                                                            
 ##  Author: Antonio Gonzalez Sanchez                                          
@@ -52,17 +52,15 @@ suppressMessages(library(tidyverse))
 ################################## FUNCTIONS ###################################
 
 #' Get the command line arguments
-#' 
 #' This function parse the command line arguments entered into the program.
 #'
 #' @return List with the argument values
-#' 
 
-getArguments <- function(){
+get_arguments <- function() {
   
   # create parser object
-  parser <- ArgumentParser(prog='06-Diff_exp_analysis.r',
-                           description= '
+  parser <- ArgumentParser(prog = '06-Diff_exp_analysis.r',
+                           description = '
                            
    This programm takes the absolute count tables (INNER) of each project to
    perform a Principal Component Analysis. From the results of this analysis,
@@ -84,24 +82,24 @@ getArguments <- function(){
    the log2FoldChange and lfcSE from lfcShrink. In addition to the raw data
    obtained in the analysis, this script also provides tables with those
    sequences with an adjusted p-value lower than 0.05.',
-                           formatter_class= 'argparse.RawTextHelpFormatter')
+                           formatter_class = 'argparse.RawTextHelpFormatter')
   
-  required = parser$add_argument_group('required arguments')
+  required <- parser$add_argument_group('required arguments')
   
   # specify our desired options 
   # by default ArgumentParser will add an help option 
   required$add_argument('-i', '--input',
-                      type = 'character',
-                      help = 'Project directory path.',
-                      required = TRUE)
+                        type = 'character',
+                        help = 'Project directory path.',
+                        required = TRUE)
   required$add_argument('-o', '--output',
-                      type = 'character',
-                      help = 'Differential expression analysis output directory path. If it does not exist, it will be created',
-                      required = TRUE)
+                        type = 'character',
+                        help = 'Differential expression analysis output directory path. If it does not exist, it will be created',
+                        required = TRUE)
   required$add_argument('-e', '--exploratory',
-                      type = 'character',
-                      help = 'Exploratory analysis output directory path. If it does not exist, it will be created',
-                      required = TRUE)
+                        type = 'character',
+                        help = 'Exploratory analysis output directory path. If it does not exist, it will be created',
+                        required = TRUE)
   parser$add_argument('-a', '--alpha',
                       default = 0.05,
                       type = 'double',
@@ -135,26 +133,25 @@ getArguments <- function(){
 #' @param path_file Path to a comma-separated .csv file
 #' @return  A DESeqDataSet
 #' @examples 
-#' csv2DESeqDataSet("/home/minimind/Desktop/Results/arth/PRJNA277424_1.csv")
-#'
+#' csv_to_deseq_dataset("/home/minimind/Desktop/Results/arth/PRJNA277424_1.csv")
 
-csv2DESeqDataSet <- function(path_file) {
-  
+csv_to_deseq_dataset <- function(path_file) {
+
   # Get and prepare counts df
-  counts_df <- read.csv(path_file, sep=",", header = TRUE)
+  counts_df <- read.csv(path_file, sep = ",", header = TRUE)
   
   # The df is not empty
-  if(nrow(counts_df) > 0){
+  if (nrow(counts_df) > 0) {
   
     # Convert df to matrix
-    counts_matrix <- data.matrix(counts_df[,-1])
-    rownames(counts_matrix) <- counts_df[,1]
+    counts_matrix <- data.matrix(counts_df[, -1])
+    rownames(counts_matrix) <- counts_df[, 1]
     
     # Get ColData
     sample_v <- c()
     condition_v <- c()
     cols <- colnames(counts_matrix)
-    for (col in cols){
+    for (col in cols) {
       
       # Create condition names
       col_elements <- strsplit(col, "_")
@@ -162,7 +159,7 @@ csv2DESeqDataSet <- function(path_file) {
       condition <- paste(condition_elements, collapse = "_")
       
       # Save control condition in variable
-      if (col_elements[[1]][1] == 'control'){
+      if (col_elements[[1]][1] == 'control') {
         control = condition
       }
       
@@ -177,7 +174,7 @@ csv2DESeqDataSet <- function(path_file) {
                           row.names = 'sample')
     coldata$condition <- as.factor(coldata$condition)
     
-    # Create DESeqDataSet (Inner)
+    # Create DESeqDataSet
     dds <- suppressMessages(DESeqDataSetFromMatrix(countData = counts_matrix,
                                                    colData = coldata,
                                                    design = ~ condition))
@@ -189,7 +186,6 @@ csv2DESeqDataSet <- function(path_file) {
   } else {
     dds <- -1
   }
-  
   return(dds)
 }
 
@@ -201,11 +197,10 @@ csv2DESeqDataSet <- function(path_file) {
 #' @param a A DataFrame or Matrix object
 #' @return A vector with the variances of each row of the DataFrame or Matrix.
 #' @examples
-#' rowVar(df)
-#' 
+#' row_var(df)
 
-rowVar <- function(a){
-  apply(a,1,var)
+row_var <- function(a) {
+  apply(a, 1, var)
 }
 
 
@@ -218,10 +213,9 @@ rowVar <- function(a){
 #' @param b A numeric vector
 #' @return Euclidean distance between a and b
 #' @examples
-#' euclideanDist(c(3, 15, 4), c(23,11,8))
-#' 
+#' euclidean_dist(c(3, 15, 4), c(23,11,8))
 
-euclideanDist <- function(a, b){
+euclidean_dist <- function(a, b) {
   return(sqrt(sum((a - b) ^ 2)))
 }
 
@@ -247,50 +241,60 @@ euclideanDist <- function(a, b){
 #' @return  A numeric vector with the variance explained by the first 6
 #'          principal components and de p-value obtained in the MWW test.
 #' @examples
-#' euclideanDist(dds,/home/minimind/Desktop/Results, PRJNA277424_1)
+#' euclidean_dist(dds,/home/minimind/Desktop/Results, PRJNA277424_1)
 #'
 
-exploratoryAnalysis <- function(dds, path_out, file_name){
+exploratory_analysis <- function(dds, path_out, file_name) {
   
   # Create output directory
   dir.create(path_out, recursive = TRUE, showWarnings = FALSE)
   
-  ### 1.1 VST NORMALIZATION 
-  # Absolute counts normalization
+  ### 1.1 VST NORMALIZATION
+  # Absolute counts normalization for mean vs variance plot (blind = FALSE)
   deseqds <- suppressMessages(DESeq2::estimateSizeFactors(dds))
-  assay(deseqds, 'counts.norm.VST') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind=T)))
+  assay(deseqds, 'counts.norm.VST') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind = FALSE)))
   
   ### 1.2 MEAN VS VARIANCE PLOT
-  png(file = paste(path_out, '/', file_name, '_meanvsvar.png', sep=''),
+  png(file = paste(path_out, '/', file_name, '_meanvsvar.png', sep = ''),
       width     = 3.25,
       height    = 3.25,
       units     = "in",
       res       = 1200,
       pointsize = 4)
-  par(mfrow=c(1,2))
-  plot(log10(rowMeans(assay(deseqds,'counts'))+1),
-       log10(rowVar(assay(deseqds, 'counts'))+1),
-       xlab=expression('Log'[10]~'Mean count'),
-       ylab=expression('Log'[10]~'Variance'),
-       main='Counts')
-  plot(rowMeans(assay(deseqds,'counts.norm.VST')),
-       rowVar(assay(deseqds, 'counts.norm.VST')),
-       xlab='Mean count',
-       ylab='Variance',
-       main='VST')
+  par(mfrow = c(1, 2))
+  plot(log10(rowMeans(assay(deseqds, 'counts')) + 1),
+       log10(row_var(assay(deseqds, 'counts')) + 1),
+       xlab = expression('Log'[10] ~ 'Mean count'),
+       ylab = expression('Log'[10] ~ 'Variance'),
+       main = 'Counts')
+  plot(rowMeans(assay(deseqds, 'counts.norm.VST')),
+       row_var(assay(deseqds, 'counts.norm.VST')),
+       xlab = 'Mean count',
+       ylab = 'Variance',
+       main = 'VST')
   dev.off()
   
   ### 2.1 PRINCIPAL COMPONENT ANALYSIS (PCA)
   
+
+  # Recalculate vst, this time with blind = TRUE for a fully unsupervised calculation
+  vst_deseqds <- varianceStabilizingTransformation(deseqds, blind = TRUE)
+
   # Perform the PCA
-  pca_res <- prcomp(x=t(assay(deseqds,'counts.norm.VST')), rank. = 6)
+  # As we are now working with the outer table, one way to filter the rows is
+  # to work only with those N sequences with highest row variance. Such as they
+  # do in DESeq2::plotPCA.
+  rv <- rowVars(assay(vst_deseqds))
+  select <- order(rv, decreasing = TRUE)[seq_len(min(1000,
+            length(rv)))]
+  pca_res <- prcomp(x = t(assay(vst_deseqds)[select, ]), rank. = 6)
   pca_df <- as.data.frame(pca_res$x)
   
   # Create the conditions column for coloring the plot
-  samples = rownames(pca_df)
-  condition_col = c()
+  samples <- rownames(pca_df)
+  condition_col <- c()
   for (sample in samples){
-    sample_v <-strsplit(sample, split = '_')
+    sample_v <- strsplit(sample, split = '_')
     sample_v <- sample_v[[1]][-c(3)]
     condition <- paste(sample_v, collapse = '_')
     condition_col <- c(condition_col, condition)
@@ -301,12 +305,12 @@ exploratoryAnalysis <- function(dds, path_out, file_name){
   
   # Create interactive plot
   plot <- plot_ly(pca_df,
-                  x = pca_df[,1],
-                  y = pca_df[,2],
-                  z = pca_df[,3],
-                  type='scatter3d',
-                  mode='markers',
-                  color=~pca_df$condition_col,
+                  x = pca_df[, 1],
+                  y = pca_df[, 2],
+                  z = pca_df[, 3],
+                  type = 'scatter3d',
+                  mode = 'markers',
+                  color = ~pca_df$condition_col,
                   colors = 'Paired') %>%
     layout(scene = list(xaxis = list(title = 'PC1'),
                         yaxis = list(title = 'PC2'),
@@ -322,8 +326,8 @@ exploratoryAnalysis <- function(dds, path_out, file_name){
   ### 2.2 EUCLIDEAN AND INTRA-/INTER-GROUP DISTANCES
   
   # Create Null matrix
-  pca_comp = pca_res$x
-  distance_matrix <-  matrix(data = rep(0,nrow(pca_comp) * nrow(pca_comp)),
+  pca_comp <- pca_res$x
+  distance_matrix <-  matrix(data = rep(0, nrow(pca_comp) * nrow(pca_comp)),
                             nrow = nrow(pca_comp),
                             ncol = nrow(pca_comp)
   )
@@ -336,41 +340,45 @@ exploratoryAnalysis <- function(dds, path_out, file_name){
 
   # Complete matrix and vectors with the corresponding distances
   for (i in 1:nrow(pca_comp)) {
-    for (j in 1:nrow(pca_comp)){
+    for (j in 1:nrow(pca_comp)) {
       # Save distances in matrix
-      distance_matrix[i,j] <- euclideanDist(pca_comp[i,][1:3], pca_comp[j,][1:3]);
+      distance_matrix[i,j] <- euclidean_dist(pca_comp[i,][1:3], pca_comp[j,][1:3]);
       # Prevent the presence of repeated distances in the vectors.
-      if (j > i){
+      if (j > i) {
         # INTRA-group distances
         if (condition_col[i] == condition_col[j]) {
-          intra_group <- c(intra_group, euclideanDist(pca_comp[i,][1:3], pca_comp[j,][1:3]))
+          intra_group <- c(intra_group, euclidean_dist(pca_comp[i,][1:3], pca_comp[j,][1:3]))
         }
         # INTER-group distances
         else{
-          inter_group <- c(inter_group, euclideanDist(pca_comp[i,][1:3], pca_comp[j,][1:3]))
-        }}}}
+          inter_group <- c(inter_group, euclidean_dist(pca_comp[i,][1:3], pca_comp[j,][1:3]))
+        }
+      }
+    }
+  }
   
   ### 2.3 MANN-WHITNEY-WILCOXON TEST
-  mww_res <- wilcox.test(inter_group, intra_group, paired = FALSE )
+  mww_res <- wilcox.test(inter_group, intra_group, paired = FALSE)
   p_value <- mww_res[3][[1]]
   
-  ### 2.4 PROPORTION OF VARIANCE EXPLAINED BY EACH COMPONENT 
+  ### 2.4 PROPORTION OF VARIANCE EXPLAINED BY EACH COMPONENT
   # Create plot
-  png(file = paste(path_out, '/', file_name, '_variance.png', sep=''),
+  png(file = paste(path_out, '/', file_name, '_variance.png', sep = ''),
       width     = 3.25,
       height    = 3.25,
       units     = "in",
       res       = 1200,
       pointsize = 4)
-  data <- head(round(pca_res$sdev ^ 2 / sum(pca_res$sdev ^ 2) * 100,2), n=6)
+  data <- head(round(pca_res$sdev ^ 2 / sum(pca_res$sdev ^ 2) * 100, 2), n = 6)
   plot <- barplot(data, ylim = c(0, max(data) * 1.2),
-                  las=2,
-                  names.arg=colnames(pca_res$x),
-                  ylab='% variance explained')
+                  las = 2,
+                  names.arg = colnames(pca_res$x),
+                  ylab = '% variance explained')
   text(x = plot, y = data, labels = data, pos = 3)
   dev.off()
   
-  # Complete vector until it has 6 elements. If there are no more principal components, add 0
+  # Complete vector until it has 6 elements.
+  # If there are no more principal components, add 0
   n_ceros <- 6 - length(data)
   ceros <- rep(0.00, n_ceros)
   data_six <- c(data, ceros)
@@ -385,7 +393,7 @@ exploratoryAnalysis <- function(dds, path_out, file_name){
 ##################################### MAIN #####################################
 
 # Get programm arguments
-args <- getArguments()
+args <- get_arguments()
 
 # Save the rest of the arguments in variables
 path_project <- args$input
@@ -399,10 +407,6 @@ sum <- data.frame()
 # Exploratory analysis results table
 ea_df <- data.frame()
 
-# Paths
-path_inner <- paste(path_project, 'Inner_joined_tables', sep='/')
-path_outer <- paste(path_project, 'Outer_joined_tables', sep='/')
-
 # Get species and project name
 project <- basename(path_project)
 species <- basename(dirname(path_project))
@@ -412,35 +416,33 @@ path_raw_out <- paste(path_out, '01-DEA_raw', species, project, sep = '/')
 path_sig_out <- paste(path_out, '02-DEA_sig', species, project, sep = '/')
 
 # List project files
-files_list <- list.files(path = path_outer)
+files_list <- list.files(path = path_project)
 cat('Analysing project', project, '(', species, ')\n')
 
 # Iterate project files
-for (file in files_list){
+for (file in files_list) {
   # Files paths
-  path_inner_file <- paste(path_inner, file, sep = '/')
-  path_outer_file <- paste(path_outer, file, sep = '/')
+  path_project_file <- paste(path_project, file, sep = '/')
   
   # New file out (without extension)
   new_file <- gsub('.csv', '', file)
   
-  # Create DeseqDataSet (Inner and outer)
-  dds_inner <- csv2DESeqDataSet(path_inner_file)
-  dds_outer <- csv2DESeqDataSet(path_outer_file)
+  # Create DeseqDataSet
+  dds_outer <- csv_to_deseq_dataset(path_project_file)
   
-  # If the count table is empty... 
-  if (!class(dds_inner) == 'DESeqDataSet' | !class(dds_outer) == 'DESeqDataSet') {
+  # If the count table is empty...
+  if (!class(dds_outer) == 'DESeqDataSet') {
     next
   }
   
   # Exploratory analysis
-  path_out_ea_pro <- paste(path_out_ea, species, project, new_file, sep="/")
-  ea_results <- exploratoryAnalysis(dds_inner, path_out_ea_pro, new_file)
+  path_out_ea_pro <- paste(path_out_ea, species, project, new_file, sep = "/")
+  ea_results <- exploratory_analysis(dds_outer, path_out_ea_pro, new_file)
   ea_df <- rbind(ea_df, c(species, new_file, ea_results))
   mww_p_value <- tail(ea_results, 1)
-  
+
   # If the p-value of the Man-whitney-wilcoxon test is equal or less than 0.05
-  if (mww_p_value <= 0.05){
+  if (mww_p_value <= 0.05) {
     
     # Create output directories
     if (!dir.exists(path_raw_out)) {
@@ -453,9 +455,9 @@ for (file in files_list){
     
     # Save results
     results_names <- resultsNames(dds_outer)
-    i = 1
+    i <- 1
     for (comp in results_names){
-      if (comp != 'Intercept'){
+      if (comp != 'Intercept') {
         
         # Get results
         res_deseq <- results(dds_outer, name = comp, alpha = alpha_value)
@@ -467,7 +469,7 @@ for (file in files_list){
                                    ShrunkenlfcSE = resLFC$lfcSE))
         
         # Extract significant differentially expressed miRNAs
-        final_res_sig <- final_res %>% 
+        final_res_sig <- final_res %>%
           data.frame() %>%
           rownames_to_column(var = 'seq') %>%
           as_tibble() %>%
@@ -476,12 +478,12 @@ for (file in files_list){
         ### RESULTS TABLES
         # Save raw final results
         final_res <- rownames_to_column(as.data.frame(final_res), var = 'seq')
-        path_file_raw_out <- paste(path_raw_out, paste(new_file,'_', i,'_dea_raw.csv', sep=''), sep='/')
-        write.csv(final_res, file=path_file_raw_out, quote=FALSE, row.names = FALSE)
+        path_file_raw_out <- paste(path_raw_out, paste(new_file, '_', i, '_dea_raw.csv', sep = ''), sep = '/')
+        write.csv(final_res, file = path_file_raw_out, quote = FALSE, row.names = FALSE)
         
         # Save significant final results
-        path_file_sig_out <- paste(path_sig_out,paste(new_file,'_', i,'_dea_sig.csv', sep=''),sep='/')
-        write.csv(as.data.frame(final_res_sig), file=path_file_sig_out, quote=FALSE, row.names = FALSE)
+        path_file_sig_out <- paste(path_sig_out, paste(new_file, '_', i, '_dea_sig.csv', sep = ''), sep = '/')
+        write.csv(as.data.frame(final_res_sig), file = path_file_sig_out, quote = FALSE, row.names = FALSE)
         
         ### SUMMARY TABLE ###
         # Get experiment
@@ -494,8 +496,8 @@ for (file in files_list){
         
         # Add data to dataframe
         sum <- rbind(sum, c(species, project, exp, comp, sig, nrow(final_res)))
-        
-        i = i + 1
+
+        i <- i + 1
       }
     }
     # end results loop
@@ -503,24 +505,20 @@ for (file in files_list){
   # end mww_pvalue conditional
 }
 # end files loop
-cat(project,'(', species, ') Done!\n')
-
+cat(project, '(', species, ') Done!\n')
 
 # Save summary file
-if (nrow(sum) > 0){
+if (nrow(sum) > 0) {
   colnames(sum) <- c('species', 'Project', 'Experiment', 'Comparison', 'Padj<0.05', 'Total')
   write.csv(as.data.frame(sum),
-            file=paste(path_out, '/', project,'_summary.csv', sep=''),
-            quote=FALSE,
+            file = paste(path_out, '/', project, '_summary.csv', sep = ''),
+            quote = FALSE,
             row.names = FALSE)
 }
 
 # Save the proportion of variance explained by each component and the p-value obtained in the MWW test in a .csv file
-if (nrow(ea_df) > 0){
-  colnames(ea_df) <- c('species', 'Project','PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'P-value(MWW)')
+if (nrow(ea_df) > 0) {
+  colnames(ea_df) <- c('species', 'Project', 'PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'P-value(MWW)')
   ea_df[is.na(ea_df)] <- 0
-  write_csv(ea_df, paste(path_out_ea,'/', project, '_ea_summary_table.csv', sep=''))
+  write_csv(ea_df, paste(path_out_ea, '/', project, '_ea_summary_table.csv', sep = ''))
 }
-
-
-
