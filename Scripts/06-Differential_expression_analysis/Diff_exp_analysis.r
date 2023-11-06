@@ -462,10 +462,10 @@ path_out <- args$output
 path_out_ea <- args$exploratory
 alpha_value <- args$alpha
 
-#path_project <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/04-Projects_divided_by_subprojects/arth/PRJNA277424"
-#path_out <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/06-DiffExpAnalysis_res"
-#path_out_ea <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/05-PCA"
-#alpha_value <- 0.05
+path_project <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/04-Projects_divided_by_subprojects/arth/PRJNA277424"
+path_out <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/06-DiffExpAnalysis_res"
+path_out_ea <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/05-PCA"
+alpha_value <- 0.05
 
 # Summary dataframe
 sum <- data.frame()
@@ -572,7 +572,8 @@ cat(project, '(', species, ') Done!\n')
 # Save summary file
 if (nrow(sum) > 0) {
   colnames(sum) <- c('species', 'Project', 'Experiment', 'Comparison', 'Padj<0.05', 'Total')
-  write.csv(as.data.frame(sum),
+  sum_sorted <- sum[order(sum$Project, sum$Experiment), ]
+  write.csv(as.data.frame(sum_sorted),
             file = paste(path_out, '/', project, '_summary.csv', sep = ''),
             quote = FALSE,
             row.names = FALSE)
@@ -582,5 +583,6 @@ if (nrow(sum) > 0) {
 if (nrow(ea_df) > 0) {
   colnames(ea_df) <- c('species', 'Project', 'PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'P-value(MWW)')
   ea_df[is.na(ea_df)] <- 0
-  write_csv(ea_df, paste(path_out_ea, '/', project, '_ea_summary_table.csv', sep = ''))
+  ea_df_sorted <-  ea_df[order(ea_df$Project), ]
+  write_csv(ea_df_sorted, paste(path_out_ea, '/', project, '_ea_summary_table.csv', sep = ''))
 }
