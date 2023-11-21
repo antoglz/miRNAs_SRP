@@ -65,6 +65,7 @@ sed -i '1s/^/Specie\tProject\tFiltered\tExcluded\n/' $path_out_sum/sum_projects.
 # Concatenate summary files of filtered and excluded libraries
 [ `ls -1 $path_out_sum/*_sum_libraries.tsv 2>/dev/null | wc -l ` -gt 0 ] && awk '{print}' $path_out_sum/*_sum_libraries.tsv > $path_out_sum/sum_libraries_temp.tsv
 sort -t$'\t' -k1 -n $path_out_sum/sum_libraries_temp.tsv > $path_out_sum/sum_libraries.tsv
+sed -i '1s/^/File_path\tSequencing_depth\tDepth_sequencing_filter\tRep_threshold_filter\n/' $path_out_sum/sum_libraries.tsv
 
 # Remove specie files
 rm -f $path_out_sum/*_sum_projects.tsv

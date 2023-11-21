@@ -119,7 +119,7 @@ def GetInformativeVariables(df: pd.DataFrame) -> list:
 
 
 def GetLibrariesDepthPROCCESSING(path_project: str, path_project_metadata: str,
-                                 depth_threshold: int, num_process: int):
+                                 depth_threshold: int, num_process: int) -> multiprocessing.Manager():
     '''
     This function is used to parallelize the GetLibrariesDept function, which
     obtains the sequencing depth of each library within a group of libraries.
@@ -186,7 +186,7 @@ def GetLibrariesDepthPROCCESSING(path_project: str, path_project_metadata: str,
     for p in processes:
         p.join()
     
-    return(depth_info_lib)
+    return depth_info_lib
 
 
 def GetLibrariesDepth(path_library_list: list, path_project_metadata: str,
@@ -252,11 +252,10 @@ def GetLibrariesDepth(path_library_list: list, path_project_metadata: str,
             # Write not-in-metadata) if the sample is not found in the metadata
             depth_info_lib[fastq_gz_name] = ['NA', 'not-in-metadata']
     
-    return(depth_info_lib)
+    return depth_info_lib
 
     
-
-def GetProjectGroups(list_srr, path_metadata):
+def GetProjectGroups(list_srr: list, path_metadata: str) -> list:
     '''
     This function receives a list of samples (SRA Run) from a project and groups
     them according to the experiment they belong to. It does this by comparing
@@ -267,7 +266,7 @@ def GetProjectGroups(list_srr, path_metadata):
     sample is presented with its Run and its condition separated by "/"
     (e.g. SRR1848795/treated_drought_30%_T.0_leaves_27d).
 
-    Parameters
+    Parameters 
     ----------
     list_srr : list
         Sample list (SRA Run)
@@ -330,7 +329,7 @@ def GetProjectGroups(list_srr, path_metadata):
             treated_samples.append(sample)
             if sample_elements not in treated_conditions:
                 treated_conditions.append(sample_elements)
-    
+
     # Create matching matrix
     matrix = np.zeros((len(control_conditions), len(treated_conditions)))
 
@@ -375,6 +374,10 @@ def GetProjectGroups(list_srr, path_metadata):
                 con = '_'.join(control_elements)
                 groups_list[i].append(f'{run_value}/{con}')
         
+        # Not treated samples for control group
+        if max_v == 1:
+            continue
+
         # Add treated samples
         for j in range(len(matrix[i])):
             if matrix[i][j] == max_v:
@@ -394,6 +397,12 @@ def GetProjectGroups(list_srr, path_metadata):
                         done.append(treated)
                         con = '_'.join(treated_elements)
                         groups_list[i].append(f'{run_value}/{con}')
+    
+    # Check if the groups have no treatment samples.
+    for group in groups_list:
+        treated_sample_present = any('treated' in sample for sample in group)
+        if not treated_sample_present:
+            groups_list.remove(group)
         
     return groups_list
 
@@ -498,7 +507,6 @@ def main():
         # Check if the control and treated conditions have the minimum number of replicates.
         filtered_libraries = []
         for group in project_groups:
-
             # Store the condition as a dictionary key and the runs
             # associated with that condition as a value (in a list).
             dic_conditions = {}
