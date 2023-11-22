@@ -257,11 +257,11 @@ def GetLibrariesDepth(path_library_list: list, path_project_metadata: str,
     
 def GetProjectGroups(list_srr: list, path_metadata: str) -> list:
     '''
-    This function receives a list of samples (SRA Run) from a project and groups
-    them according to the experiment they belong to. It does this by comparing
-    control samples with treatment samples to identify which treatment samples
-    are associated with which control samples. Once identified, it groups them
-    in a list together with their control samples. The function returns a list
+    This function receives a list with ALL (important) the samples from a project
+    and groups them according to the experiment they belong to. It does this by
+    comparing control samples with treatment samples to identify which treatment
+    samples are associated with which control samples. Once identified, it groups
+    them in a list together with their control samples. The function returns a list
     containing the lists corresponding to each of these groups, where each
     sample is presented with its Run and its condition separated by "/"
     (e.g. SRR1848795/treated_drought_30%_T.0_leaves_27d).
@@ -373,10 +373,6 @@ def GetProjectGroups(list_srr: list, path_metadata: str) -> list:
                 done.append(control)
                 con = '_'.join(control_elements)
                 groups_list[i].append(f'{run_value}/{con}')
-        
-        # Not treated samples for control group
-        if max_v == 1:
-            continue
 
         # Add treated samples
         for j in range(len(matrix[i])):
@@ -397,12 +393,7 @@ def GetProjectGroups(list_srr: list, path_metadata: str) -> list:
                         done.append(treated)
                         con = '_'.join(treated_elements)
                         groups_list[i].append(f'{run_value}/{con}')
-    
-    # Check if the groups have no treatment samples.
-    for group in groups_list:
-        treated_sample_present = any('treated' in sample for sample in group)
-        if not treated_sample_present:
-            groups_list.remove(group)
+
         
     return groups_list
 
@@ -501,39 +492,43 @@ def main():
         # Get run names from file names
         lib_valid_names = [key.replace('_tr.fastq.gz','') for key, value in depth_info_lib.items() if value[1] == "valid"]
 
-        # Obtain control-treatment groups from libraries selected for their sequencing depth.
-        project_groups = GetProjectGroups(lib_valid_names, project_met_path)
+        # Obtain control-treatment groups from all the libraries
+        project_groups_all = GetProjectGroups(total_libraries, project_met_path)
 
-        # Check if the control and treated conditions have the minimum number of replicates.
         filtered_libraries = []
-        for group in project_groups:
-            # Store the condition as a dictionary key and the runs
-            # associated with that condition as a value (in a list).
-            dic_conditions = {}
+        # Iterate through groups of samples
+        for group in project_groups_all:
+            depth_valid_samples_dic = {}
+            # Iterate through samples list
             for sample in group:
-                sam_elements = sample.split("/") # SRR1848795/treated_drought_30%_T.0_leaves_27d
-                run = sam_elements[0] # SRR1848795
-                con = sam_elements[1] # treated_drought_30%_T.0_leaves_27d
-                if con not in dic_conditions:
-                    dic_conditions[con] = [run]
-                else:
-                    dic_conditions[con].append(run)
+                # Get run and condition name from sample
+                sample_elements = sample.split("/") # SRR1848795/treated_drought_30%_T.0_leaves_27d
+                run = sample_elements[0] # SRR1848795
+                con = sample_elements[1] # treated_drought_30%_T.0_leaves_27d
+
+                # Check if the library is valid in terms of sequencing depth
+                if run in lib_valid_names:
+                    # Save the sample and the condition in a dictionary
+                    if con not in depth_valid_samples_dic:
+                        depth_valid_samples_dic[con] = [run]
+                    else:
+                        depth_valid_samples_dic[con].append(run)
             
             # Iterate previously created dictionary
             valid_list_group = []
             valid_control = False
             valid_treated = False
-            for condition in dic_conditions:
+            for condition in depth_valid_samples_dic:
 
                 # Count the number of libraries of the same condition
-                num_samples = len(dic_conditions[condition])
+                num_samples = len(depth_valid_samples_dic[condition])
                 # If it is "control" and has more than rep_threshold replicates
                 if 'control' in condition and num_samples >= rep_threshold:
-                    valid_list_group += dic_conditions[condition]
+                    valid_list_group += depth_valid_samples_dic[condition]
                     valid_control = True
                 # If it is "treated" and has more than rep_threshold replicates
                 elif num_samples >= rep_threshold:
-                    valid_list_group += dic_conditions[condition]
+                    valid_list_group += depth_valid_samples_dic[condition]
                     valid_treated = True
 
             # There must be at least "rep_threshold" control and treated replicates.
