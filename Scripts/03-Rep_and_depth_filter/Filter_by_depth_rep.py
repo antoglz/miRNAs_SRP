@@ -494,7 +494,7 @@ def main():
 
         # Obtain control-treatment groups from all the libraries
         project_groups_all = GetProjectGroups(total_libraries, project_met_path)
-
+ 
         filtered_libraries = []
         # Iterate through groups of samples
         for group in project_groups_all:
