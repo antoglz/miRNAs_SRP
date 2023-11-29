@@ -6,7 +6,7 @@
 #SBATCH --time=07-00:00:00              # Time limit to execute the job
 #SBATCH --mem-per-cpu=5G                # Required Memory per core
 #SBATCH --cpus-per-task=2               # CPUs assigned per task.
-#SBATCH --qos=short                     # QoS: short,medium,long,long-mem
+#SBATCH --qos=medium                     # QoS: short,medium,long,long-mem
 
 #******************************************************************************
 #  
