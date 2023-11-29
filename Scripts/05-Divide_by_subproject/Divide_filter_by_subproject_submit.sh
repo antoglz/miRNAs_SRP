@@ -45,8 +45,8 @@ do
     for project in $projects_list
     do
         ### Execution
-        srun -N1 -n1 -c$SLURM_CPUS_PER_TASK --quiet --exclusive python3 ./Divide_filter_by_subprojects.py \
-            --path-counts $sp \
+        srun -N1 -n1 -c$SLURM_CPUS_PER_TASK --quiet --exclusive python3 Divide_filter_by_subproject.py \
+            --path-counts $project \
             --metadata $metadata \
             --path-results $path_results &
     done

@@ -306,7 +306,7 @@ exploratory_analysis <- function(dds, path_out_dir, file_name) {
       ### 1.1 VST NORMALIZATION
       # Absolute counts normalization for meand vs variance plot (blind = FALSE)
       deseqds <- suppressMessages(DESeq2::estimateSizeFactors(sub_dds))
-      assay(deseqds, 'counts.norm.VST') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind = FALSE)))
+      assay(deseqds, 'counts.norm.VST.false') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind = FALSE)))
       
       ### 1.2 MEAN VS VARIANCE PLOT
       png(file = paste(path_out, '/', sub_file_name, '_meanvsvar.png', sep = ''),
@@ -321,26 +321,19 @@ exploratory_analysis <- function(dds, path_out_dir, file_name) {
            xlab = expression('Log'[10] ~ 'Mean count'),
            ylab = expression('Log'[10] ~ 'Variance'),
            main = 'Counts')
-      plot(rowMeans(assay(deseqds, 'counts.norm.VST')),
-           row_var(assay(deseqds, 'counts.norm.VST')),
+      plot(rowMeans(assay(deseqds, 'counts.norm.VST.false')),
+           row_var(assay(deseqds, 'counts.norm.VST.false')),
            xlab = 'Mean count',
            ylab = 'Variance',
            main = 'VST')
       dev.off()
       
       ### 2.1 PRINCIPAL COMPONENT ANALYSIS (PCA)
-      
       # Recalculate vst, this time with blind = TRUE for a fully unsupervised calculation
-      vst_deseqds <- varianceStabilizingTransformation(deseqds, blind = TRUE)
+      assay(deseqds, 'counts.norm.VST.true') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind = TRUE)))
       
       # Perform the PCA
-      # As we are now working with the outer table, one way to filter the rows is
-      # to work only with those N sequences with highest row variance. Such as they
-      # do in DESeq2::plotPCA.
-      rv <- rowVars(assay(vst_deseqds), useNames = FALSE)
-      select <- order(rv, decreasing = TRUE)[seq_len(min(1000,
-                                                         length(rv)))]
-      pca_res <- prcomp(x = t(assay(vst_deseqds)[select, ]), rank. = 6)
+      pca_res <- prcomp(x=t(assay(deseqds,'counts.norm.VST.true')), rank. = 6)
       pca_df <- as.data.frame(pca_res$x)
       
       # Create the conditions column for coloring the plot
