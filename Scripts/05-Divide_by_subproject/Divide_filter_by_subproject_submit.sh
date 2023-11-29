@@ -2,9 +2,9 @@
 
 #SBATCH --job-name=divide_prj           # Job name to show with squeue
 #SBATCH --output=divide_prj_%j.out      # Output file
-#SBATCH --ntasks=30                     # Maximum number of cores to use
-#SBATCH --time=01-00:00:00              # Time limit to execute the job
-#SBATCH --mem-per-cpu=7G                # Required Memory per core
+#SBATCH --ntasks=15                     # Maximum number of cores to use
+#SBATCH --time=07-00:00:00              # Time limit to execute the job
+#SBATCH --mem-per-cpu=5G                # Required Memory per core
 #SBATCH --cpus-per-task=2               # CPUs assigned per task.
 #SBATCH --qos=short                     # QoS: short,medium,long,long-mem
 
@@ -25,12 +25,12 @@
 
 # Modules
 module load anaconda
-source activate tsRNA_project
+source activate sRNA_project
 
 # Paths
-path_counts=/storage/ncRNA/Projects/TFM_AntonioG/Results/Metaanalysis_miRNA/03-Fusion_count_tables_RF
-metadata=/storage/ncRNA/Projects/TFM_AntonioG/Additional_info/Metaanalysis_miRNA/01-Sra_info/Metaanalysis_miRNA/Standardised_metadata
-path_results=/storage/ncRNA/Projects/TFM_AntonioG/Results/Metaanalysis_miRNA/04-Projects_divided_by_subprojects
+path_counts=/home/gonsanan/miRNAs_srp_project/Results/03-Fusion_count_tables_RF
+metadata=/storage/ncRNA/Projects/sRNA_project/02-Metadata
+path_results=/home/gonsanan/miRNAs_srp_project/Results/04-Projects_divided_by_subprojects
 
 # List all species paths
 species_list=$( ls -d1 $path_counts/* )

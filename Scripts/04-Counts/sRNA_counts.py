@@ -61,8 +61,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 ## FUNCTIONS
 
 ### 1. SQLITE CONNECT, INSERT AND JOIN FUNCTIONS
-
-def Connect2Database(database_name: str):
+def connect_to_database (database_name: str):
     '''
     This function establishes a connection to an SQlite database, creating it
     if it does not exist.
@@ -92,8 +91,8 @@ def Connect2Database(database_name: str):
     else:
         return sqliteConnection, cursor
 
-
-def Insert2Database(database_name: str, table_name: str, data_path: str, type_data: str='sequences'):
+def insert_to_database (database_name: str, table_name: str, data_path: str,
+                        type_data: str='sequences') -> None:
     '''
     This function inserts data into a specified SQLite database table.
 
@@ -112,7 +111,7 @@ def Insert2Database(database_name: str, table_name: str, data_path: str, type_da
         ("type_data="counts_rpm"). By default "sequences.
     '''
     # Connect to database
-    sqliteConnection, cursor = Connect2Database(database_name)
+    sqliteConnection, cursor = connect_to_database(database_name)
 
     # Select separator and type of data
     if type_data == 'sequences':
@@ -166,10 +165,9 @@ def Insert2Database(database_name: str, table_name: str, data_path: str, type_da
         if exit:
             sys.exit()
 
-
-def MergeCountsTablesPROCESSING(list_of_tuples: list) -> None:
+def merge_counts_tables_processing (list_of_tuples: list) -> None:
     '''
-    This function is used to parallelize the MergeCountsTables function,
+    This function is used to parallelize the merge_counts_tables function,
     which generates and executes the necessary SQLite queries to join in
     the same table the different replicates of the same condition or multiple
     tables of different conditions that contain the data of all their
@@ -180,7 +178,7 @@ def MergeCountsTablesPROCESSING(list_of_tuples: list) -> None:
     list_of_tuples : list
         List of two tuples. The first tuple contains the information associated
         with the absolute counts and the second one with the RPM. Each tuple
-        contains 4 elements, which serve as arguments to the MergeCountsTables()
+        contains 4 elements, which serve as arguments to the merge_counts_tables()
         function. The first of these arguments is a list with the names of the
         replicates of each condition (t_1_r_1, t_1_r_2, t_2_r_1, t_2_r_2), the
         second one is a string that specifies the type of data we are working
@@ -207,7 +205,7 @@ def MergeCountsTablesPROCESSING(list_of_tuples: list) -> None:
         
         # Write process
         processes.append(multiprocessing.Process(
-                        target = MergeCountsTables,
+                        target = merge_counts_tables,
                         args=(database_name, list_tables, type_data,
                               type_tables, mode)))
         
@@ -219,9 +217,8 @@ def MergeCountsTablesPROCESSING(list_of_tuples: list) -> None:
     for p in processes:
         p.join()
 
-
-def MergeCountsTables(database_name: str, data_in: list, type_data: str,
-                     type_tables: str, mode: str='inner') -> None:
+def merge_counts_tables (database_name: str, data_in: list, type_data: str,
+                         type_tables: str, mode: str='inner') -> None:
     '''
     This function generates and executes the necessary SQLite queries to join in
     the same table the different replicates of the same condition or multiple
@@ -385,7 +382,7 @@ def MergeCountsTables(database_name: str, data_in: list, type_data: str,
     ###########################################################################
 
     # Connect to database
-    sqliteConnection, cursor = Connect2Database(database_name)
+    sqliteConnection, cursor = connect_to_database(database_name)
     
     try:
         for query in query_list:
@@ -407,7 +404,7 @@ def MergeCountsTables(database_name: str, data_in: list, type_data: str,
             sys.exit()
 
 
-def RepCountsAvg(database_name: str, table: str, new_table: str) -> str:
+def rep_counts_avg(database_name: str, table: str, new_table: str) -> str:
     """
     This function calculates the average counts (avg) of each sequence 
     belonging to the same condition (e.g. Control or Treated), that is,
@@ -431,7 +428,7 @@ def RepCountsAvg(database_name: str, table: str, new_table: str) -> str:
     """
         
     ## Connect to database
-    sqliteConnection, cursor = Connect2Database(database_name)
+    sqliteConnection, cursor = connect_to_database(database_name)
 
     ## Get the counts table
     try:
@@ -523,7 +520,8 @@ def RepCountsAvg(database_name: str, table: str, new_table: str) -> str:
 
 ### 2. FORMAT CONVERSION FUNCTIONS
 
-def Sql2Csv(database: str, table: str, path_out: str, columns: list, red_sample_dic: dict) -> None:
+def sql_to_csv(database: str, table: str, path_out: str, columns: list,
+               red_sample_dic: dict) -> None:
     """
     This function writes counts tables from a specific Sqlite database in .csv
     file.
@@ -544,7 +542,7 @@ def Sql2Csv(database: str, table: str, path_out: str, columns: list, red_sample_
     """
 
     ## 1. Connect to database
-    sqliteConnection, cursor = Connect2Database(database)
+    sqliteConnection, cursor = connect_to_database(database)
 
     ## 2. Create query
     # Create a string with the columns to write from the table
@@ -593,7 +591,7 @@ def Sql2Csv(database: str, table: str, path_out: str, columns: list, red_sample_
             sys.exit()
     
 
-def Fasta2Csv(fasta_file: str, sep: str, new_file_path: str) -> None:
+def fasta_to_csv(fasta_file: str, sep: str, new_file_path: str) -> None:
     '''
     This function creates a file with two columns (sequence, identifier)
     delimited by a specific separator (sep) from a .fasta file. 
@@ -609,7 +607,7 @@ def Fasta2Csv(fasta_file: str, sep: str, new_file_path: str) -> None:
         Absolute path of the new file.
     '''
     # Parse .fasta file
-    fasta_generator = ParseFastaFile(fasta_file)
+    fasta_generator = parse_fasta_file(fasta_file)
     
     # Write in the new file
     with open(new_file_path, 'w') as tsv_file:
@@ -626,7 +624,7 @@ def Fasta2Csv(fasta_file: str, sep: str, new_file_path: str) -> None:
 
 ### 3. FILTERING FUNCTIONS
 
-def FilterByRNAcentral(library_list: list, Rnacentral_dir: str,
+def filter_by_rnacentral(library_list: list, Rnacentral_dir: str,
                         path_write: str) -> None:
     '''
     This function filters the libraries by eliminating those sequences that
@@ -730,10 +728,10 @@ def FilterByRNAcentral(library_list: list, Rnacentral_dir: str,
 
 ### 4. PARALLELIZED FUNCTIONS
 
-def AllAbsoluteCountsPROCESSING (libraries_list: list, path_read: str,
+def all_absolute_counts_processing (libraries_list: list, path_read: str,
                                  path_write: str, num_process: int) -> None:
     '''
-    This function is used to parallelize the AllAbsoluteCounts function,
+    This function is used to parallelize the all_absolute_counts function,
     which calculates the absolute counts of each library
 
     Parameters
@@ -775,7 +773,7 @@ def AllAbsoluteCountsPROCESSING (libraries_list: list, path_read: str,
         else:
             pf = pi + distribution
         
-        processes.append(multiprocessing.Process(target = AllAbsoluteCounts ,
+        processes.append(multiprocessing.Process(target = all_absolute_counts ,
                                                 args=(libraries_list[pi:pf],
                                                       path_read, path_write))) 
         processes[i].start()
@@ -789,7 +787,8 @@ def AllAbsoluteCountsPROCESSING (libraries_list: list, path_read: str,
     print('\nDONE!')
     
     
-def AllAbsoluteCounts (libraries_list: list, path_read: str, path_write: str):
+def all_absolute_counts (libraries_list: list, path_read: str,
+                         path_write: str) -> None:
     '''
     This function calculates the absolute counts of a libraries list.
 
@@ -829,9 +828,10 @@ def AllAbsoluteCounts (libraries_list: list, path_read: str, path_write: str):
         os.system(command)
 
 
-def AllRPMCountsPROCESSING(abs_list: list, path_read: str, path_write: str, num_process: int):
+def all_rpm_counts_processing(abs_list: list, path_read: str, path_write: str,
+                              num_process: int) -> None:
     '''
-    This function is used to parallelize the AllRPMCounts function, which
+    This function is used to parallelize the all_rpm_counts function, which
     calculates the reads per millon (RPM) of each library.
 
     Parameters
@@ -873,7 +873,7 @@ def AllRPMCountsPROCESSING(abs_list: list, path_read: str, path_write: str, num_
         else:
             pf = pi + distribution
         
-        processes.append(multiprocessing.Process(target = AllRPMCounts ,
+        processes.append(multiprocessing.Process(target = all_rpm_counts ,
                                                  args=(abs_list,
                                                        path_read,
                                                        path_write) )) 
@@ -888,7 +888,7 @@ def AllRPMCountsPROCESSING(abs_list: list, path_read: str, path_write: str, num_
     print('\nDONE!')
 
 
-def AllRPMCounts (abs_list: list, path_read: str, path_write: str):
+def all_rpm_counts (abs_list: list, path_read: str, path_write: str) -> None:
     '''
     This function calculates the reads per millon (RPM) of a libraries list.
 
@@ -945,7 +945,7 @@ def AllRPMCounts (abs_list: list, path_read: str, path_write: str):
 
 ### 5. METADATA FUNCTIONS
 
-def GetSampleMetadata(path: str, sample: str) -> list:
+def get_sample_metadata(path: str, sample: str) -> list:
     '''
     This function extracts the sample metadata from the metadata table of the
     project to which it belongs. 
@@ -986,7 +986,7 @@ def GetSampleMetadata(path: str, sample: str) -> list:
     return SRR_metadata
 
 
-def GetInformativeVariables(path_metadata: str) -> list:
+def get_informative_variables(path_metadata: str) -> list:
     '''
     This function identifies informative variables within a metadata table,
     understanding informative variables as those with more than one level
@@ -1044,7 +1044,7 @@ def GetInformativeVariables(path_metadata: str) -> list:
 
 ### 6. OTHER FUNCTIONS
 
-def ParseFastaFile(fasta_file: str) -> None:
+def parse_fasta_file(fasta_file: str) -> None:
     '''
     This function parse a fasta file returning a generator object containing
     the headers and the sequences. If this object is iterated outside the
@@ -1071,8 +1071,8 @@ def ParseFastaFile(fasta_file: str) -> None:
         sys.exit()
 
 
-def FusionTables (list_abs: list, list_rpm: list, path_write: str,
-                  path_metadata: str, mode: str):
+def fusion_tables (list_abs: list, list_rpm: list, path_write: str,
+                  path_metadata: str, mode: str) -> None:
     '''
     This function merges all absolute count tables into a single table and all
     RPM tables into another different table. In addition, it also creates a
@@ -1109,7 +1109,7 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
     os.system(f'mkdir -p ./tmp_{project_name}')
 
     # Get informative variables from the project metadata (columns from 0-n)
-    inf_var = GetInformativeVariables(path_metadata)
+    inf_var = get_informative_variables(path_metadata)
 
     # Iterate a number of times equal to len(list_abs) and len(list_rpm)
     for index1 in range(len(list_abs)):
@@ -1134,7 +1134,7 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
         sys.stdout.flush()
 
         # Get SRR metadata
-        metadata = GetSampleMetadata(path_metadata, run_name)
+        metadata = get_sample_metadata(path_metadata, run_name)
         
         # If there is no sample metadata, exit.
         if len(metadata) == 0:
@@ -1190,7 +1190,7 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
         # Insert absolute counts of each sample in db (1 sample = 1 table in db)
         print(f'Inserting {sample_name} table in database (Absolute Counts)...')
         sys.stdout.flush()
-        Insert2Database(db_abs_name, new_red_name, list_abs[index1], 'counts_abs')
+        insert_to_database(db_abs_name, new_red_name, list_abs[index1], 'counts_abs')
 
         ## 3. LOAD RPM TABLE INTO CORRESPONDING SQLITE DATABASE
         #######################################################################
@@ -1199,7 +1199,7 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
         # Insert RPM of each sample in db (1 sample = 1 table in db)
         print(f'Inserting {sample_name} table in database (RPM)...')
         sys.stdout.flush()
-        Insert2Database(db_rpm_name, new_red_name, list_rpm[index1], 'counts_rpm')
+        insert_to_database(db_rpm_name, new_red_name, list_rpm[index1], 'counts_rpm')
         
     
     ## 4. JOIN THE DIFFERENT REPLICATES OF EACH CONDITION IN A SINGLE TABLE
@@ -1207,10 +1207,10 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
     print('Joining samples of the same condition (Replicates)...')
     sys.stdout.flush()
 
-    # Tuple with the arguments of the MergeCountsTables function for Abs and RPM.
+    # Tuple with the arguments of the merge_counts_tables function for Abs and RPM.
     list_args_merge_rep = [(db_abs_name, red_sample_list, 'counts', 'replicates', mode),
                         (db_rpm_name, red_sample_list, 'RPM', 'replicates', mode)]          
-    MergeCountsTablesPROCESSING(list_args_merge_rep)
+    merge_counts_tables_processing(list_args_merge_rep)
     print('DONE!\n')
     sys.stdout.flush()
  
@@ -1221,11 +1221,11 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
     print('Joining condition tables...')
     sys.stdout.flush()
 
-    # Tuple with the arguments of the MergeCountsTables function for Abs and RPM.
+    # Tuple with the arguments of the merge_counts_tables function for Abs and RPM.
     list_args_merge_con = [(db_abs_name, red_sample_list, 'counts', 'conditions', 'outer'),
                         (db_rpm_name, red_sample_list, 'RPM', 'conditions', 'outer')]
                     
-    MergeCountsTablesPROCESSING(list_args_merge_con)
+    merge_counts_tables_processing(list_args_merge_con)
     
     print('DONE!\n')
     sys.stdout.flush()
@@ -1244,11 +1244,11 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
     # Abs counts
     final_table = 'project_table'
     print('Saving tables resulting from the joining process in a csv file (Absolute Counts)...')
-    Sql2Csv(db_abs_name, final_table, path_write_abs, red_sample_list, red_sample_dic)
+    sql_to_csv(db_abs_name, final_table, path_write_abs, red_sample_list, red_sample_dic)
 
     # RPM
     print('Saving tables resulting from the joining process in a csv file (RPM)...')
-    Sql2Csv(db_rpm_name, final_table, path_write_rpm, red_sample_list, red_sample_dic)
+    sql_to_csv(db_rpm_name, final_table, path_write_rpm, red_sample_list, red_sample_dic)
     sys.stdout.flush()
 
 
@@ -1263,12 +1263,12 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
     # Abs counts
     print('Calculating average of replicates of each condition (Absolute Counts)...')
     sys.stdout.flush()
-    RepCountsAvg(db_abs_name, final_table, final_table + '_avg')
+    rep_counts_avg(db_abs_name, final_table, final_table + '_avg')
 
     # RPM
     print('Calculating average of replicates of each condition(RPM)...')
     sys.stdout.flush()
-    RepCountsAvg(db_rpm_name, final_table, final_table + '_avg')
+    rep_counts_avg(db_rpm_name, final_table, final_table + '_avg')
     print("DONE!\n")
     sys.stdout.flush()
 
@@ -1277,12 +1277,12 @@ def FusionTables (list_abs: list, list_rpm: list, path_write: str,
     # Abs counts
     print('\nSaving AVG-Abs tables in a csv file...')
     sys.stdout.flush()
-    Sql2Csv(db_abs_name, final_table + '_avg', path_write_mean_abs, list_condition, red_condition_dic)
+    sql_to_csv(db_abs_name, final_table + '_avg', path_write_mean_abs, list_condition, red_condition_dic)
 
     # RPM
     print('\nSaving AVG-RPM tables in a csv file...')
     sys.stdout.flush()          
-    Sql2Csv(db_rpm_name, final_table + '_avg', path_write_mean_rpm, list_condition, red_condition_dic)
+    sql_to_csv(db_rpm_name, final_table + '_avg', path_write_mean_rpm, list_condition, red_condition_dic)
     print('Files saved!\n')
     sys.stdout.flush()
 
@@ -1409,7 +1409,7 @@ def main():
         print('\nFILTER BY RNAcentral DATABASE.\n')
         print('Filtering...\n')
         sys.stdout.flush()
-        FilterByRNAcentral(fasta_files_list, RNAcentral_dir, path_write)
+        filter_by_rnacentral(fasta_files_list, RNAcentral_dir, path_write)
     
     elif R == 0:
 
@@ -1455,7 +1455,7 @@ def main():
     print('\nCalculating the absolute counts...')
     sys.stdout.flush()
     t_ini = time()
-    AllAbsoluteCountsPROCESSING(fasta_read_abs_list, path_read_abs, path_write_abs, num_process)
+    all_absolute_counts_processing(fasta_read_abs_list, path_read_abs, path_write_abs, num_process)
     t_end = time()
     print('Time: %.3f s' % (t_end - t_ini))
     sys.stdout.flush()
@@ -1489,7 +1489,7 @@ def main():
     print('\nCalculating the RPM counts...')
     sys.stdout.flush()
     t_ini = time()
-    AllRPMCountsPROCESSING(abs_csv_list, path_read_rpm, path_write_rpm, num_process)
+    all_rpm_counts_processing(abs_csv_list, path_read_rpm, path_write_rpm, num_process)
     t_end = time()
     print('Time: %.3f s' % (t_end - t_ini))
     sys.stdout.flush()
@@ -1536,7 +1536,7 @@ def main():
     # Join tables
     print('\nJoining the tables mode = outer between replicates...')
     sys.stdout.flush()
-    FusionTables (csv_files_list_abs, csv_files_list_rpm, path_write_join, path_metadata_abs, 'outer')
+    fusion_tables (csv_files_list_abs, csv_files_list_rpm, path_write_join, path_metadata_abs, 'outer')
 
     ###############################################################
         

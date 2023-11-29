@@ -39,7 +39,7 @@ import sys
 
 ### 1. SQLITE FUNCTIONS
 
-def Connect2Database(database_name: str):
+def connect_to_database (database_name: str):
     '''
     This function establishes a connection to an SQlite database, creating it
     if it does not exist.
@@ -70,7 +70,7 @@ def Connect2Database(database_name: str):
         return sqliteConnection, cursor
 
 
-def Insert2Database(database_name: str, table_name: str, data_path: str, columns: list):
+def insert_to_database (database_name: str, table_name: str, data_path: str, columns: list):
     '''
     This function inserts data into a specified SQLite database table.
 
@@ -87,7 +87,7 @@ def Insert2Database(database_name: str, table_name: str, data_path: str, columns
     '''
 
     # Connect to database
-    sqliteConnection, cursor = Connect2Database(database_name)    
+    sqliteConnection, cursor = connect_to_database(database_name)    
 
     # Create dictionary with original and temporal names of samples
     id_dic = {}
@@ -169,8 +169,9 @@ def Insert2Database(database_name: str, table_name: str, data_path: str, columns
             sys.exit()
         
         return id_dic
-
-def Sql2Csv(database: str, table: str, path_out: str, columns: list, names_dic: dict) -> None:
+    
+    
+def sql_to_csv (database: str, table: str, path_out: str, columns: list, names_dic: dict) -> None:
     '''
     This function writes counts tables from a specific Sqlite database in .csv
     file.
@@ -191,7 +192,7 @@ def Sql2Csv(database: str, table: str, path_out: str, columns: list, names_dic: 
     '''
 
     ## 1. Connect to database
-    sqliteConnection, cursor = Connect2Database(database)
+    sqliteConnection, cursor = connect_to_database(database)
 
     ## 2. Create query
     # Create a string with the columns to write from the table
@@ -248,8 +249,7 @@ def Sql2Csv(database: str, table: str, path_out: str, columns: list, names_dic: 
 
 
 ### 2. METADATA FUNCTIONS
-
-def GetProjectMetadata(path: str) -> pd.DataFrame:
+def get_project_metadata (path: str) -> pd.DataFrame:
     '''
     This function extracts the sample metadata from the metadata table of the
     project to which it belongs. 
@@ -280,7 +280,7 @@ def GetProjectMetadata(path: str) -> pd.DataFrame:
         return df
 
 
-def GetInformativeVariables(df: pd.DataFrame) -> list:
+def get_informative_variables (df: pd.DataFrame) -> list:
     '''   
     This function identifies informative variables within a metadata table,
     understanding informative variables as those with more than one level
@@ -323,9 +323,8 @@ def GetInformativeVariables(df: pd.DataFrame) -> list:
     return inf_var_pos
 
 
-### 3. DIVIDE BY subprojects FUNCTION
-
-def DivideProjectBysubprojects(project_samples, project_metadata):
+### 3. DIVIDE BY SUBPROJECTS FUNCTION
+def divide_project_by_subproject (project_samples, project_metadata):
     '''
     This function receives a list of samples from a project and groups them
     according to the subproject they belong to. It does this by comparing
@@ -348,8 +347,8 @@ def DivideProjectBysubprojects(project_samples, project_metadata):
     '''
 
     # Get project metadata
-    meta_table = GetProjectMetadata(project_metadata)
-    infvar = GetInformativeVariables(meta_table)
+    meta_table = get_project_metadata(project_metadata)
+    infvar = get_informative_variables(meta_table)
 
     # Get column names
     columns = [meta_table.columns[var] for var in infvar]
@@ -493,11 +492,11 @@ def main():
         columns = file.readline().rstrip().split(",")
 
     # Insert counts table into SQLite database
-    id_dic = Insert2Database(f'./tmp_{project}/{project}_database.db', table_name, path_table, columns)
+    id_dic = insert_to_database(f'./tmp_{project}/{project}_database.db', table_name, path_table, columns)
 
     # Obtain subprojects groups
     project_metadata = f'{metadata}/{species}_m_{project}.txt'
-    groups_list = DivideProjectBysubprojects(columns, project_metadata)
+    groups_list = divide_project_by_subproject(columns, project_metadata)
     
     # Create project path out 
     project_path_out = f'{path_out}/{species}/{project}'
@@ -506,7 +505,7 @@ def main():
     # Write the subprojects in different files
     for i, group in enumerate(groups_list):
         file_path_out = f'{project_path_out}/{project}_{str(i + 1)}.csv'
-        Sql2Csv(f'./tmp_{project}/{project}_database.db', table_name, file_path_out, group, id_dic)
+        sql_to_csv(f'./tmp_{project}/{project}_database.db', table_name, file_path_out, group, id_dic)
 
     # Delete SQlite database
     os.system(f'rm -f -r ./tmp_{project}')
