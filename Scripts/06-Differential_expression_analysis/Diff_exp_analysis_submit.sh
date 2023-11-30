@@ -23,7 +23,8 @@
 #******************************************************************************
 
 # Modules
-source /home/ggomez/joan/ENTER/bin/activate antonio_Renv
+module load anaconda
+source activate sRNA_project
 
 # Paths
 path_in=/home/gonsanan/miRNAs_srp_project/Results/04-Projects_divided_by_subprojects
