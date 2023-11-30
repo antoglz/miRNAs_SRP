@@ -5,7 +5,7 @@
 ##                                                                            
 ##  1. Exploratory analysis
 ##
-##  This program takes the tables of absolute counts from each project and
+##  This program takes the tables of absolute counts from a project and
 ##  performs a Principal Component Analysis (PCA) for each of the stress
 ##  events considered in that project. From the results of this analysis,
 ##  it takes the coordinates generated for each sample from the values of the
@@ -30,8 +30,9 @@
 ##  sequences with an adjusted p-value lower than 0.05.
 ##                                                                            
 ##                                                                            
-##  Author: Antonio Gonzalez Sanchez                                          
-##  Date: 10/01/2023                                                          
+##  Author: Antonio Gonzalez Sanchez
+##  Version: 2.0                                          
+##  Date: 30/11/2023                                                          
 ##                                                                            
 ###############################################################################
 
@@ -454,11 +455,6 @@ path_project <- args$input
 path_out <- args$output
 path_out_ea <- args$exploratory
 alpha_value <- args$alpha
-
-path_project <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/04-Projects_divided_by_subprojects/arth/PRJNA277424"
-path_out <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/06-DiffExpAnalysis_res"
-path_out_ea <- "/home/antonio/Escritorio/pruebas/pruebas_diffexpanalysis/Results/05-PCA"
-alpha_value <- 0.05
 
 # Summary dataframe
 sum <- data.frame()
