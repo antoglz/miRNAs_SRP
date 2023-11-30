@@ -28,7 +28,7 @@ source activate sRNA_project
 
 # Paths
 path_in=/home/gonsanan/miRNAs_srp_project/Results/04-Projects_divided_by_subprojects
-path_ea=/home/gonsanan/miRNAs_srp_project/Results/Metaanalysis_miRNA/05-PCA
+path_ea=/home/gonsanan/miRNAs_srp_project/Results/05-PCA
 path_dea=/home/gonsanan/miRNAs_srp_project/Results/06-DiffExpAnalysis
 alpha=0.05
 
