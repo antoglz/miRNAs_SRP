@@ -32,6 +32,9 @@ path_ea=/home/gonsanan/miRNAs_srp_project/Results/05-PCA
 path_dea=/home/gonsanan/miRNAs_srp_project/Results/06-DiffExpAnalysis
 alpha=0.05
 
+# Create directory for log files
+mkdir -p log_files
+
 ################################################################################
 #           1. EXECUTE Diff_exp_analysis.r PROGRAM IN PARALLEL                 #
 ################################################################################
@@ -48,8 +51,11 @@ do
     ## Iterate species projects paths list
     for path_project in $projects
     do
+        # Get project name
+        project=$(basename "$path_project")
+
         ### Execution 
-        srun -N1 -n1 -c$SLURM_CPUS_PER_TASK --quiet --exclusive Rscript Diff_exp_analysis.r \
+        srun -N1 -n1 -c$SLURM_CPUS_PER_TASK --output ./log_files/$project.log --quiet --exclusive Rscript Diff_exp_analysis.r \
             --input $path_project \
             --output $path_dea \
             --exploratory $path_ea \
@@ -57,8 +63,6 @@ do
     done
 done
 wait
-
-exit 0
 
 
 ################################################################################
