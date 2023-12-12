@@ -470,14 +470,14 @@ filter_annotated_sequences () {
     local path_file_out="${2}"
 
     # Read the original table and iterate through each line
-    while IFS=, read -r seq miRBase_species miRBase_others PmiREN_species PmiREN_others
+    while IFS=, read -r seq miRBase_species miRBase_others PmiREN_species PmiREN_others length
     do  
         # Check if the sequence is annotated at least once in miRBase and PmiREN
         if [[ ( "$miRBase_species" != "NULL" || "$miRBase_others" != "NULL" ) \
             && ( "$PmiREN_species" != "NULL" || "$PmiREN_others" != "NULL" ) ]]; then
             
             # Print the line that meets the criteria and save it to the output file
-            echo "$seq,$miRBase_species,$miRBase_others,$PmiREN_species,$PmiREN_others" >> "$path_file_out"
+            echo "$seq,$miRBase_species,$miRBase_others,$PmiREN_species,$PmiREN_others,$length" >> "$path_file_out"
         fi
     done < "$path_file_in"
 
@@ -621,7 +621,7 @@ main () {
                     mkdir -p $path_annotation_files
                     mkdir -p $path_annotation_files_filt
 
-                    printf "\n########################### File: $file ($species) ########################### \n"
+                    printf "\n########################### File: $file ($species) ###########################\n\n"
         
 
                     # Remove header and create temporary file
@@ -688,14 +688,17 @@ main () {
                                                 $out_name $path_annotation_files
                             printf "Done!\n"
                             
+                            # Calculate the sequences length and add a length column to annotated file
+                            awk 'BEGIN{ FS=OFS="," } {if (NR==1) {$NF="length"} else {$NF=length($1)} }1' $path_annotation_files/$out_name"_annot.csv" > $path_annotation_files/$out_name"_annot_len.csv"
+                            rm -r $path_annotation_files/*_annot.csv
+
                             printf "Creating filtered annotation tables....\n"
-                            filter_annotated_sequences $path_annotation_files/$out_name"_annot.csv" \
-                                                     $path_annotation_files_filt/$out_name"_annot_filt.csv"
+                            filter_annotated_sequences $path_annotation_files/$out_name"_annot_len.csv" \
+                                                       $path_annotation_files_filt/$out_name"_annot_filt.csv"
                             printf "Done!\n"
 
-
                             # Count the number of annotated sequences and how many of them have been selected.
-                            num_miRNAs=$(tail -n +2 $path_annotation_files/$out_name"_annot.csv" | wc -l)
+                            num_miRNAs=$(tail -n +2 $path_annotation_files/$out_name"_annot_len.csv" | wc -l)
                             num_miRNAs_filtered=$(tail -n +2 $path_annotation_files_filt/$out_name"_annot_filt.csv" | wc -l)
 
                             # Save it in summary file
