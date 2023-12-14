@@ -5,22 +5,26 @@
 #   miRNAs_annotation.sh
 #
 #   This program annotates significant differentially expressed miRNAs
-#   using the miRBase and PmiREN databases without considering a threshold
-#   value of log2FC. To do this,it generates a fasta file with the sequences
-#   and aligns them with the miRBase and PmiREN databases to identify the
-#   mature miRNAs and also its precursors. Once annotated, the results of
-#   both alignments are merged into a single five-column table: sequence,
-#   Annotation with miRBase using only sequences of specific species,
-#   Annotation with miRBase using the rest of the species, Annotation with
-#   PmiREN using only sequences of specific species, Annotation with PmiREN
-#   using the rest of the species. If any of the sequences has not obtained
-#   results in the alignment with one of the two databases, it will be
-#   represented as NULL. In addition, this program generates a summary file
-#   with the number of sequences annotated for each of the two cases: miRNAs
-#   and precursors.
+#   using the miRBase, PmiREN, and sRNAanno databases without considering a
+#   threshold value of log2FC. To do this, it generates a fasta file with the
+#   sequences and aligns them with the miRBase, PmiREN, and sRNAanno databases
+#   to identify the mature miRNAs and also their precursors. Once annotated,
+#   the results of all three alignments are merged into a single five-column
+#   table: sequence, Annotation with miRBase using only sequences of specific
+#   species, Annotation with miRBase using the rest of the species, Annotation
+#   with PmiREN using only sequences of specific species, Annotation with
+#   PmiREN, and Annotation with sRNAanno using only sequences of specific
+#   species, Annotation with sRNAanno using the rest of the species. If any of
+#   the sequences has not obtained results in the alignment with one of the
+#   three databases, it will be represented as NULL. Additionally, the program
+#   generates files where sequences are filtered based on whether they have
+#   been annotated in at least two of the three databases. This program also
+#   generates a summary file with the number of sequences annotated for each of
+#   the three cases: miRNAs, and precursors.
 #
 #   Author: Antonio Gonzalez Sanchez
 #   Date: 26/01/2023
+#   Version: 3.0
 #
 #
 #******************************************************************************
@@ -83,7 +87,7 @@ arguments_management() {
     mww_pvalue=-1
 
     # Read the options
-    TEMP=$(getopt -o h::i:o:m:e:s:t:l:a:p: --long help::,input:,output:,mirbase:,pmiren:,species-ids:,threads:,projects-list:,ea-table:,mww-pvalue: -- "$@")
+    TEMP=$(getopt -o h::i:o:m:e:a:s:t:l:a:p: --long help::,input:,output:,mirbase:,pmiren:,srnaanno:,species-ids:,threads:,projects-list:,ea-table:,mww-pvalue: -- "$@")
 
     # Check if the arguments are valid
     VALID_ARGUMENTS=$?
@@ -109,6 +113,8 @@ arguments_management() {
                 path_mirbase="$2"; shift 2 ;;
             -e|--pmiren)
                 path_PmiREN="$2"; shift 2 ;;
+            -a|--srnaanno)
+                path_sRNAanno="$2"; shift 2 ;;
             -s|--species-ids)
                 path_ids_table="$2"; shift 2 ;;
             -t|--threads)
@@ -360,19 +366,22 @@ merge_tsv_files () {
 #####################################################
 #
 #   This function creates an annotation table
-#   from 4 SAM files obtained from the
-#   alignment of a fasta file with the miRBase
-#   and PmiREN databases (sequences belonging
-#   to the species and sequences belonging to
-#   other species separately). This table
-#   consists of 5 columns: seq, miRBase_
+#   from 6 SAM files obtained from the
+#   alignment of a fasta file with the miRBase,
+#   PmiREN and sRNAanno databases (sequences
+#   belonging to the species and sequences
+#   belonging to other species separately).
+#   This table consists of 8 columns: seq, miRBase_
 #   species, miRBase_rest, PmiREN_species,
-#   PmiREN_rest. The first column contains
-#   the nucleotide sequence and the last 4
-#   columns the name of each sequence according
-#   to the miRBase (species and other species)
-#   and PmiREN (species and other species)
-#   databases, respectively.
+#   PmiREN_rest, sRNAanno_species, sRNAanno_rest
+#   and length. The first column contains
+#   the nucleotide sequence, the next 6 columns
+#   represent the sequence name according to
+#   miRBase (species and other species), PmiREN
+#   (species and other species), and sRNAanno
+#   (species and other species), respectively;
+#   and the last column shows the length of the
+#   nucleotide sequence in question.
 #
 #   Arguments:
 #       SAM file obtained from miRBase
@@ -383,6 +392,16 @@ merge_tsv_files () {
 #           alignment (species)
 #       SAM file obtained from PmiREN
 #           alignment (other species)
+#       SAM file obtained from sRNAanno
+#           alignment (species)
+#       SAM file obtained from sRNAanno
+#           alignment (other species)
+#       Two-column TSV file with nucleotide
+#           sequences of significantly
+#           differentially expressed sequences
+#           (column 2) and a name used for
+#           sorting them (column 1) (e.g.,
+#           sequence1 TTGAAAGTGACTACATCGGGG).
 #       Output file name
 #       Output directory path.
 #
@@ -395,9 +414,11 @@ get_miRNAs_annotation () {
     local sam_file_mirbase_rest="${2}"
     local sam_file_PmiREN_species="${3}"
     local sam_file_PmiREN_rest="${4}"
-    local path_tsv_seq="${5}"
-    local out_name="${6}"
-    local path_out="${7}"
+    local sam_file_sRNAanno_species="${5}"
+    local sam_file_sRNAanno_rest="${6}"
+    local path_tsv_seq="${7}"
+    local out_name="${8}"
+    local path_out="${9}"
 
     # Get annotation tables
     [[ -f $sam_file_mirbase_species ]] &&
@@ -412,27 +433,38 @@ get_miRNAs_annotation () {
     [[ -f $sam_file_PmiREN_rest ]] &&
         cat $sam_file_PmiREN_rest | cut -f1,3 | awk -F "\t" '{if (substr($1,1,1) != "@"){print}}' > $path_out/$out_name"_PmiREN_rest_temp.tsv" ||
         touch $path_out/$out_name"_PmiREN_rest_temp.tsv"
+    [[ -f $sam_file_sRNAanno_species ]] &&
+        cat $sam_file_sRNAanno_species | cut -f1,3 | awk -F "\t" '{if (substr($1,1,1) != "@"){print}}' > $path_out/$out_name"_sRNAanno_species_temp.tsv" ||
+        touch $path_out/$out_name"_sRNAanno_species_temp.tsv"
+    [[ -f $sam_file_sRNAanno_rest ]] &&
+        cat $sam_file_sRNAanno_rest | cut -f1,3 | awk -F "\t" '{if (substr($1,1,1) != "@"){print}}' > $path_out/$out_name"_sRNAanno_rest_temp.tsv" ||
+        touch $path_out/$out_name"_sRNAanno_rest_temp.tsv"
 
     # Join nucleotide sequence with identifier
     merge_tsv_files $path_out/$out_name"_mirbase_species_temp.tsv" $path_tsv_seq 1 1 1.2,2.2 $path_out/$out_name"_mirbase_species_annot.tsv"
     merge_tsv_files $path_out/$out_name"_mirbase_rest_temp.tsv" $path_tsv_seq 1 1 1.2,2.2 $path_out/$out_name"_mirbase_rest_annot.tsv"
     merge_tsv_files $path_out/$out_name"_PmiREN_species_temp.tsv" $path_tsv_seq 1 1 1.2,2.2 $path_out/$out_name"_PmiREN_species_annot.tsv"
     merge_tsv_files $path_out/$out_name"_PmiREN_rest_temp.tsv" $path_tsv_seq 1 1 1.2,2.2 $path_out/$out_name"_PmiREN_rest_annot.tsv"
+    merge_tsv_files $path_out/$out_name"_sRNAanno_species_temp.tsv" $path_tsv_seq 1 1 1.2,2.2 $path_out/$out_name"_sRNAanno_species_annot.tsv"
+    merge_tsv_files $path_out/$out_name"_sRNAanno_rest_temp.tsv" $path_tsv_seq 1 1 1.2,2.2 $path_out/$out_name"_sRNAanno_rest_annot.tsv"
     
     # Create tsv annotation table
     merge_tsv_files $path_out/$out_name"_mirbase_species_annot.tsv" $path_out/$out_name"_mirbase_rest_annot.tsv" 2 2 0,1.1,2.1 $path_out/$out_name"_temp_1.tsv" TRUE
     merge_tsv_files $path_out/$out_name"_temp_1.tsv" $path_out/$out_name"_PmiREN_species_annot.tsv" 1 2 0,1.2,1.3,2.1 $path_out/$out_name"_temp_2.tsv" TRUE
     merge_tsv_files $path_out/$out_name"_temp_2.tsv" $path_out/$out_name"_PmiREN_rest_annot.tsv" 1 2 0,1.2,1.3,1.4,2.1 $path_out/$out_name"_temp_3.tsv" TRUE
+    merge_tsv_files $path_out/$out_name"_temp_3.tsv" $path_out/$out_name"_sRNAanno_species_annot.tsv" 1 2 0,1.2,1.3,1.4,1.5,2.1 $path_out/$out_name"_temp_4.tsv" TRUE
+    merge_tsv_files $path_out/$out_name"_temp_4.tsv" $path_out/$out_name"_sRNAanno_rest_annot.tsv" 1 2 0,1.2,1.3,1.4,1.5,1.6,2.1 $path_out/$out_name"_temp_5.tsv" TRUE
 
     # Convert tsv to csv
-    sort -k 1b,1 -t$'\t' $path_out/$out_name"_temp_3.tsv" -o $path_out/$out_name"_temp_3_sort.tsv"
-    echo "seq,miRBase_species,miRBase_others,PmiREN_species,PmiREN_others" > $path_out/$out_name"_annot.csv"
-    cat $path_out/$out_name"_temp_3_sort.tsv" | sed $'s/\t/,/g' >> $path_out/$out_name"_annot.csv"
+    sort -k 1b,1 -t$'\t' $path_out/$out_name"_temp_5.tsv" -o $path_out/$out_name"_temp_5_sort.tsv"
+    echo "seq,miRBase_species,miRBase_others,PmiREN_species,PmiREN_others,sRNAanno_species,sRNAanno_others" > $path_out/$out_name"_annot.csv"
+    cat $path_out/$out_name"_temp_5_sort.tsv" | sed $'s/\t/,/g' >> $path_out/$out_name"_annot.csv"
   
     # Remove temporal files
     rm $path_out/*temp*
-    rm $path_out/*PmiREN*
     rm $path_out/*mirbase*
+    rm $path_out/*PmiREN*
+    rm $path_out/*sRNAanno*
 }
 
 
@@ -440,21 +472,24 @@ get_miRNAs_annotation () {
 #
 #   This function filters annotated sequences,
 #   selecting only those that have been annotated
-#   at least once in both the miRBase and PmiREN
-#   databases. It processes the CSV file
-#   corresponding to the annotation table
-#   containing the following fields: seq,
-#   miRBase_species, miRBase_others, PmiREN_
-#   species, and PmiREN_others. It checks each
-#   line in the input file to determine if the
-#   miRBase fields (miRBase_species and miRBase_
-#   others) or the PmiREN fields (PmiREN_species
-#   and PmiREN_others) are not equal to "NULL".
-#   If at least one field in both miRBase and
-#   PmiREN is not "NULL", the functions writes
+#   in at least two out of the three databases:
+#   miRBase, PmiREN, and sRNAanno. It processes
+#   the CSV file corresponding to the annotation
+#   table containing the following fields: seq,
+#   miRBase_species, miRBase_rest, PmiREN_species,
+#   PmiREN_rest, sRNAanno_species, sRNAanno_rest,
+#   and length. The function checks each line in
+#   the input file to determine if there are
+#   annotations in at least two of the three
+#   databases. Specifically, it checks if at
+#   least one field in both miRBase (miRBase_species
+#   and miRBase_rest) and PmiREN (PmiREN_species
+#   and PmiREN_rest) or sRNAanno (sRNAanno_species
+#   and sRNAanno_rest) is not equal to "NULL".
+#   If this condition is met, the function writes
 #   the line to a new file (path_file_out). This
 #   function effectively filters and saves lines
-#   from the input CSV file based on specified
+#   from the input CSV file based on the updated
 #   criteria.
 #
 #   Arguments:
@@ -470,15 +505,23 @@ filter_annotated_sequences () {
     local path_file_out="${2}"
 
     # Read the original table and iterate through each line
-    while IFS=, read -r seq miRBase_species miRBase_others PmiREN_species PmiREN_others length
+    while IFS=, read -r seq miRBase_species miRBase_others PmiREN_species PmiREN_others sRNAanno_species sRNAanno_others length
     do  
-        # Check if the sequence is annotated at least once in miRBase and PmiREN
-        if [[ ( "$miRBase_species" != "NULL" || "$miRBase_others" != "NULL" ) \
-            && ( "$PmiREN_species" != "NULL" || "$PmiREN_others" != "NULL" ) ]]; then
-            
-            # Print the line that meets the criteria and save it to the output file
-            echo "$seq,$miRBase_species,$miRBase_others,$PmiREN_species,$PmiREN_others,$length" >> "$path_file_out"
-        fi
+        # Number of databases where the sequence has been annotated
+        points=0
+        
+        # Check if the sequence is annotated at least once in miRBase
+        [[ ( "$miRBase_species" != "NULL" || "$miRBase_others" != "NULL" ) ]] && let "points++"
+
+        # Check if the sequence is annotated at least once in PmiREN
+        [[ ( "$PmiREN_species" != "NULL" || "$PmiREN_others" != "NULL" ) ]] && let "points++"
+
+        # Check if the sequence is annotated at least once in sRNAanno
+        [[ ( "$sRNAanno_species" != "NULL" || "$sRNAanno_others" != "NULL" ) ]] && let "points++"
+        
+        # Print the line that meets the criteria and save it to the output file
+        [ $points  -ge 2 ] && echo "$seq,$miRBase_species,$miRBase_others,$PmiREN_species,$PmiREN_others,$sRNAanno_species,$sRNAanno_others,$length" >> "$path_file_out"
+
     done < "$path_file_in"
 
 }
@@ -548,18 +591,23 @@ main () {
             # Create temporary databases (species and others)
             create_temporary_databases $species $path_ids_table $path_mirbase/$reference $path_mirbase
             create_temporary_databases $species $path_ids_table $path_PmiREN/$reference $path_PmiREN
+            create_temporary_databases $species $path_ids_table $path_sRNAanno/$reference $path_sRNAanno
 
             # Create Index directories
             mkdir -p $path_mirbase/mirbase_species_idx
             mkdir -p $path_mirbase/mirbase_rest_idx
             mkdir -p $path_PmiREN/PmiREN_species_idx
             mkdir -p $path_PmiREN/PmiREN_rest_idx
+            mkdir -p $path_sRNAanno/sRNAanno_species_idx
+            mkdir -p $path_sRNAanno/sRNAanno_rest_idx
 
             # Index databases
             bowtie2-build --threads $threads $path_mirbase/database_species.fasta $path_mirbase/mirbase_species_idx/mirbase_species > /dev/null 2>&1
             bowtie2-build --threads $threads $path_mirbase/database_rest.fasta $path_mirbase/mirbase_rest_idx/mirbase_rest > /dev/null 2>&1
             bowtie2-build --threads $threads $path_PmiREN/database_species.fasta $path_PmiREN/PmiREN_species_idx/PmiREN_species > /dev/null 2>&1
             bowtie2-build --threads $threads $path_PmiREN/database_rest.fasta $path_PmiREN/PmiREN_rest_idx/PmiREN_rest > /dev/null 2>&1
+            bowtie2-build --threads $threads $path_sRNAanno/database_species.fasta $path_sRNAanno/sRNAanno_species_idx/sRNAanno_species > /dev/null 2>&1
+            bowtie2-build --threads $threads $path_sRNAanno/database_rest.fasta $path_sRNAanno/sRNAanno_rest_idx/sRNAanno_rest > /dev/null 2>&1
             
             # Iterate projects
             for project in $projects_list
@@ -611,7 +659,7 @@ main () {
 
                     # Output paths
                     path_fasta_files=$path_out/miRNA_annotation_$suffix/$reference_name/01-Significant_seq_fasta/$species/$project
-                    path_sam_files=$path_out/miRNA_annotation_$suffix/$reference_name/02-Alignment_miRBase-PmiREN_results/$species/$project
+                    path_sam_files=$path_out/miRNA_annotation_$suffix/$reference_name/02-Alignment_miRBase-PmiREN-sRNAanno_results/$species/$project
                     path_annotation_files=$path_out/miRNA_annotation_$suffix/$reference_name/03-Annotation_tables/$species/$project
                     path_annotation_files_filt=$path_out/miRNA_annotation_$suffix/$reference_name/04-Annotation_tables_filtered/$species/$project
 
@@ -670,26 +718,48 @@ main () {
                             
                             # Alignment with PmiREN (Rest database)
                             printf "Bowtie2 alignment with PmiREN (others database)...\n"
-                           results_pmiren_others=$(bowtie2 -f --no-unal -p $threads \
-                                                           -x $path_PmiREN/PmiREN_rest_idx/PmiREN_rest \
-                                                           -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
-                                                           -S $path_sam_files/$out_name"_PmiREN_rest.sam" 2>&1)
+                            results_pmiren_others=$(bowtie2 -f --no-unal -p $threads \
+                                                            -x $path_PmiREN/PmiREN_rest_idx/PmiREN_rest \
+                                                            -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                            -S $path_sam_files/$out_name"_PmiREN_rest.sam" 2>&1)
                             
                             # Check if an alignment error occurred due to the non-existence of the database.
                             [ $? -ne 0 ] && echo "Species $species not found in the PmiREN database!" || printf "Done!\n"
+
+                            # Alignment with sRNAanno (species database)
+                            printf "Bowtie2 alignment with sRNAanno (species database)...\n"
+                            results_srnaanno_sp=$(bowtie2 -f --no-unal -p $threads \
+                                                        -x $path_sRNAanno/sRNAanno_species_idx/sRNAanno_species \
+                                                        -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                        -S $path_sam_files/$out_name"_sRNAanno_species.sam" 2>&1)
+
+                            # Check if an alignment error occurred due to the non-existence of the database.
+                            [ $? -ne 0 ] && echo "Species $species not found in the sRNAanno database!" || printf "Done!\n"
+                            
+                            # Alignment with sRNAanno (Rest database)
+                            printf "Bowtie2 alignment with sRNAanno (others database)...\n"
+                            results_srnaanno_others=$(bowtie2 -f --no-unal -p $threads \
+                                                              -x $path_sRNAanno/sRNAanno_rest_idx/sRNAanno_rest \
+                                                              -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                              -S $path_sam_files/$out_name"_sRNAanno_rest.sam" 2>&1)
+                            
+                            # Check if an alignment error occurred due to the non-existence of the database.
+                            [ $? -ne 0 ] && echo "Species $species not found in the sRNAanno database!" || printf "Done!\n"
                             
                             # Create annotation table from sam files
                             printf "Creating annotation table...\n"
                             get_miRNAs_annotation $path_sam_files/$out_name"_mirbase_species.sam" \
-                                                $path_sam_files/$out_name"_mirbase_rest.sam" \
-                                                $path_sam_files/$out_name"_PmiREN_species.sam" \
-                                                $path_sam_files/$out_name"_PmiREN_rest.sam" \
-                                                $path_fasta_files/$out_name"_dea_"$suffix".tsv" \
-                                                $out_name $path_annotation_files
+                                                  $path_sam_files/$out_name"_mirbase_rest.sam" \
+                                                  $path_sam_files/$out_name"_PmiREN_species.sam" \
+                                                  $path_sam_files/$out_name"_PmiREN_rest.sam" \
+                                                  $path_sam_files/$out_name"_sRNAanno_species.sam" \
+                                                  $path_sam_files/$out_name"_sRNAanno_rest.sam" \
+                                                  $path_fasta_files/$out_name"_dea_"$suffix".tsv" \
+                                                  $out_name $path_annotation_files
                             printf "Done!\n"
                             
                             # Calculate the sequences length and add a length column to annotated file
-                            awk 'BEGIN{ FS=OFS="," } {if (NR==1) {$NF="length"} else {$NF=length($1)} }1' $path_annotation_files/$out_name"_annot.csv" > $path_annotation_files/$out_name"_annot_len.csv"
+                            awk 'BEGIN{ FS=OFS="," } {if (NR==1) {print $0, "length"} else {print $0, length($1)} }' $path_annotation_files/$out_name"_annot.csv" > $path_annotation_files/$out_name"_annot_len.csv"
                             rm -r $path_annotation_files/*_annot.csv
 
                             printf "Creating filtered annotation tables....\n"
@@ -727,6 +797,8 @@ main () {
             rm -r $path_mirbase/*rest*
             rm -r $path_PmiREN/*species*
             rm -r $path_PmiREN/*rest*
+            rm -r $path_sRNAanno/*species*
+            rm -r $path_sRNAanno/*rest*
         done
         # end species loop
     done
