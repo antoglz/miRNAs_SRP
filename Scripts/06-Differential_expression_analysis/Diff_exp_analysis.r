@@ -40,10 +40,13 @@
 ################################### MODULES ####################################
 
 suppressMessages(library(argparse))
+suppressMessages(library(dendextend))
 suppressMessages(library(DESeq2))
 suppressMessages(library(ff))
 suppressMessages(library(htmltools))
 suppressMessages(library(plotly))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(SARTools))
 suppressMessages(library(stringr))
 suppressMessages(library(tibble))
 suppressMessages(library(tidyverse))
@@ -219,6 +222,91 @@ euclidean_dist <- function(a, b) {
 }
 
 
+sere_dendrogram <- function(dds, path_dir_out){
+  
+  ## 1. Build the matrix with SERE values
+  ##############################################################################
+  
+  # Get the counts matrix
+  df <- counts(dds)
+  
+  # Create an empty matrix
+  sere_dist <- matrix(NA, nrow = ncol(df), ncol = ncol(df))
+  colnames(sere_dist) <- colnames(df)
+  rownames(sere_dist) <- colnames(df)
+  
+  # Calculate SERE coefficent for each sample comparison
+  for (i in 1:(ncol(df) - 1)){
+    for (j in (i + 1):ncol(df)){
+      two_samples_counts <- cbind(df[, i], df[, j])
+      sere_coefficient <- SERE(two_samples_counts)
+      sere_dist[i, j] <- sere_coefficient
+      sere_dist[j, i] <- sere_coefficient
+    }
+  }
+  
+  # Save sere_dist object
+  write.csv(sere_dist, file = paste0(path_dir_out,'/01-SERE_matrix.csv'), quote = FALSE)
+  
+  ## 2. Obtain a vector with the conditions of each sample.
+  ##############################################################################
+  
+  condition_v <- c()
+  for (samples in colnames(df)){
+    sample_elements = strsplit(samples,'_')
+    sample_elements <- sample_elements[[1]][-3]
+    condition <- paste(sample_elements, collapse = "_")
+    condition_v <- c(condition_v, condition)
+  }
+  
+  ## 3. Build the dendrogram
+  ################################################################################
+  
+  ## 3.1. Build the dendrogram
+  dend <- as.dist(sere_dist) %>% hclust %>% as.dendrogram
+  
+  # Save node points
+  write.table(hclust(as.dist(sere_dist))$height,
+              file = paste0(path_dir_out,'/02-SERE_dendrogram_node_points.csv'),
+              quote = FALSE,
+              row.names = FALSE,
+              col.names = "Node points", sep = ",")
+  
+  ## 3.2. Let's add some color
+  # Get unique names
+  unique_names <- unique(condition_v)
+  
+  # Check if i only have two levels
+  if (length(unique_names) == 2) {
+    # Use the 'Set1' palette for two levels
+    color_mapping <- setNames(c("#1B9E77", "#D95F02"), unique_names)
+  } else {
+    # Use the 'Dark2' palette for more than two levels
+    color_mapping <- setNames(brewer.pal(length(unique_names), 'Dark2'), unique_names)
+  }
+  
+  # Create a new vector of colors based on the original vector
+  assigned_colors <- color_mapping[condition_v]
+  
+  # But sort them based on their order in dend:
+  colors_to_use <- assigned_colors[order.dendrogram(dend)]
+  
+  ## 3.3. Add labels and colors
+  labels(dend) <- colnames(df)[order.dendrogram(dend)]
+  labels_colors(dend) <- colors_to_use
+  
+  ## 4.4. Create and save the plot
+  pdf(paste(path_dir_out, '/03-Dendrogram.pdf', sep = ''))
+  right_m <- round(max(nchar(colnames(df)))/2 - 2)
+  par(mar = c(4, 4, 2, right_m), cex=0.7)
+  plot(dend, horiz= TRUE)
+  abline(v = 1, col = "#666666", lty = 2)
+  dev.off()
+  
+  return(sere_dist)
+}
+
+
 #' Exploratory Analysis
 #' 
 #' This function receives a DESeqDataSet object and performs an individual
@@ -268,9 +356,13 @@ exploratory_analysis <- function(dds, path_out_dir, file_name) {
       # Get subfile name
       sub_file_name <- paste0(file_name, "_", sub_file)
       
-      # Create output directory
-      path_out <- paste0(path_out_dir,"/", sub_file_name)
-      dir.create(path_out, recursive = TRUE, showWarnings = FALSE)
+      # Create output directories
+      path_dir_pca_out <- paste0(path_out_dir,"/", sub_file_name,"/01-PCA")
+      path_dir_sere_out <- paste0(path_out_dir,"/", sub_file_name, "/02-SERE_dendrogram")
+      path_dir_mvv_out <- paste0(path_out_dir,"/", sub_file_name, "/03-Mean_vs_variance")
+      dir.create(path_dir_pca_out, recursive = TRUE, showWarnings = FALSE)
+      dir.create(path_dir_sere_out, recursive = TRUE, showWarnings = FALSE)
+      dir.create(path_dir_mvv_out, recursive = TRUE, showWarnings = FALSE)
       
       # Get control and treated sample names (Create sample column)
       control_samples_names <- condition_samples_list[grep("^control", names(condition_samples_list))][[1]]
@@ -310,7 +402,7 @@ exploratory_analysis <- function(dds, path_out_dir, file_name) {
       assay(deseqds, 'counts.norm.VST.false') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind = FALSE)))
       
       ### 1.2 MEAN VS VARIANCE PLOT
-      png(file = paste(path_out, '/', sub_file_name, '_meanvsvar.png', sep = ''),
+      png(file = paste(path_dir_mvv_out, '/', sub_file_name, '_meanvsvar.png', sep = ''),
           width     = 3.25,
           height    = 3.25,
           units     = "in",
@@ -329,7 +421,10 @@ exploratory_analysis <- function(dds, path_out_dir, file_name) {
            main = 'VST')
       dev.off()
       
-      ### 2.1 PRINCIPAL COMPONENT ANALYSIS (PCA)
+      ### 2.1 SERE DENDROGRAM
+      sere_dendrogram(sub_dds, path_dir_sere_out)
+      
+      ### 2.2 PRINCIPAL COMPONENT ANALYSIS (PCA)
       # Recalculate vst, this time with blind = TRUE for a fully unsupervised calculation
       assay(deseqds, 'counts.norm.VST.true') <- as.data.frame(assay(varianceStabilizingTransformation(deseqds, blind = TRUE)))
       
@@ -367,7 +462,7 @@ exploratory_analysis <- function(dds, path_out_dir, file_name) {
       
       # Create html file with interactive plot
       htmlwidgets::saveWidget(widget = plot,
-                              file = paste(path_out, '/', sub_file_name, '.html', sep=''),
+                              file = paste(path_dir_pca_out, '/', sub_file_name, '.html', sep=''),
                               selfcontained = FALSE)
       
       ### 2.2 EUCLIDEAN AND INTRA-/INTER-GROUP DISTANCES
@@ -410,7 +505,7 @@ exploratory_analysis <- function(dds, path_out_dir, file_name) {
       
       ### 2.4 PROPORTION OF VARIANCE EXPLAINED BY EACH COMPONENT
       # Create plot
-      png(file = paste(path_out, '/', sub_file_name, '_variance.png', sep = ''),
+      png(file = paste(path_dir_pca_out, '/', sub_file_name, '_variance.png', sep = ''),
           width     = 3.25,
           height    = 3.25,
           units     = "in",
