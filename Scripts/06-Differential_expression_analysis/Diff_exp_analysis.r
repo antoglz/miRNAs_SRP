@@ -1,7 +1,7 @@
 
 ################################################################################
 ##                                                                            
-##  06-Diff_exp_analysis.r                                                          
+##  Diff_exp_analysis.r                                                          
 ##                                                                            
 ##  1. Exploratory analysis
 ##
@@ -14,7 +14,10 @@
 ##  treated2) and the distances between samples of different conditions or
 ##  INTER-group (e.g. treated1 - control1). Then, it performs a Mann-whitney-
 ##  wilcoxon test to check if there are differences between the INTRA and
-##  INTER-group distances previously calculated. 
+##  INTER-group distances previously calculated. Additionally, creates a
+##  dendrogram using the Simple Error Rate Estimation (SERE) obtained from
+##  comparing the different samples of the absolute counts table and a plot
+##  of mean vs variance comparison.
 ##
 ##  2. Differential expression analysis
 ##
@@ -62,28 +65,36 @@ suppressMessages(library(tidyverse))
 get_arguments <- function() {
   
   # create parser object
-  parser <- ArgumentParser(prog = '06-Diff_exp_analysis.r',
+  parser <- ArgumentParser(prog = 'Diff_exp_analysis.r',
                            description = '
-    This program takes the tables of absolute counts from each project and
+    1. Exploratory analysis
+    
+    This program takes the tables of absolute counts from a project and
     performs a Principal Component Analysis (PCA) for each of the stress
     events considered in that project. From the results of this analysis,
-    it takes the coordinates generated for each sample from the values of
-    the first three principal components and calculates the Euclidean
-    distances between samples of the same condition or INTRA-group (e.g.
-    treated1 - treated2) and the distances between samples of different
-    conditions or INTER-group (e.g. treated1 - control1). Then, it performs
-    a Mann-Whitney-Wilcoxon test to check if there are differences between
-    the INTRA and INTER-group distances previously calculated. Then, the
-    program performs a differential expression analysis using DESeq2. The
-    absolute counts tables contain a group of control samples and different
-    treatment samples to which they are related. The differential expression
-    analysis is performed considering all possible combinations of control
-    vs treated (c_vs_t1, c_vs_t2, etc), so the program returns a result table
-    for each of them. The results table contains all the information provided
-    by the results() function of DESeq2 together with the log2FoldChange and
-    lfcSE from lfcShrink. In addition to the raw data obtained in the analysis,
-    this script also provides tables with those sequences with an adjusted
-    p-value lower than 0.05.',
+    it takes the coordinates generated for each sample from the values of the
+    first three principal components and calculates the Euclidean distances
+    between samples of the same condition or INTRA-group (e.g. treated1 -
+    treated2) and the distances between samples of different conditions or
+    INTER-group (e.g. treated1 - control1). Then, it performs a Mann-whitney-
+    wilcoxon test to check if there are differences between the INTRA and
+    INTER-group distances previously calculated. Additionally, creates a
+    dendrogram using the Simple Error Rate Estimation (SERE) obtained from
+    comparing the different samples of the absolute counts table and a plot
+    of mean vs variance comparison.
+    
+    2. Differential expression analysis
+    
+    Then, the program performs a differential expression analysis using
+    DESeq2. The absolute counts tables contain a group of control samples and
+    different treatment samples to which they are related. The differential
+    expression analysis is performed considering all possible combinations of
+    control vs treated (c_vs_t1, c_vs_t2, etc), so the program returns a result
+    table for each of them. The results table contains all the information
+    provided by the results() function of DESeq2 together with the
+    log2FoldChange and lfcSE from lfcShrink. In addition to the raw data
+    obtained in the analysis, this script also provides tables with those
+    sequences with an adjusted p-value lower than 0.05.',
                            formatter_class = 'argparse.RawTextHelpFormatter')
   
   required <- parser$add_argument_group('required arguments')
@@ -221,6 +232,28 @@ euclidean_dist <- function(a, b) {
   return(sqrt(sum((a - b) ^ 2)))
 }
 
+
+#' Creates a dendrogram using the Simple Error Rate Estimation (SERE) obtained
+#' from comparing the different samples of a DESeqDataSet
+#' 
+#' This function recieves a DESeq Dataset and uses the counts matrix to calculate
+#' the Simple Error Ratio Estimate (SERE) for each sample comparison within the
+#' dataset, a statistic that can determine whether two RNA-seq libraries are
+#' faithful replicates or globally different (Schulze, Kanwar & Gölzenleuchter,
+#' 2012). With the SERE obtained from these comparisons, it creates a distance
+#' matrix and generates a dendrogram, which it saves in the output directory
+#' together with the node points associated with the dendrogram (points at which
+#' a branch is bifurcates) and the SERE values obtained (matrix).
+#'
+#' @param dds DESeqDataSet
+#' @param path_dir_out Output directory path
+#' @return  A Matrix with the SERE values of each comparison
+#' @examples 
+#' csv_to_deseq_dataset("/home/minimind/Desktop/Results/arth/PRJNA277424_1.csv")
+#' @references
+#' Schulze, S. K., Kanwar, R., Gölzenleuchter, M., Therneau, T. M., & Beutler,
+#' A. S. (2012). SERE: single-parameter quality control and sample comparison
+#' for RNA-Seq. BMC genomics, 13, 524. https://doi.org/10.1186/1471-2164-13-524
 
 sere_dendrogram <- function(dds, path_dir_out){
   
