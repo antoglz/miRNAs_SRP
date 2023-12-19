@@ -170,15 +170,12 @@ for (data in data_list){
   path_out <- paste(path_out_dir, "/", "Group_miRNAs_", suffix, sep = "")
   dir.create(path_out, recursive = TRUE, showWarnings = FALSE)
   
-  # Only for significant miRNAs
-  if (suffix == 'sig'){
-    # Create summary file and add column names
-    text <- paste('species', 'Project', 'File', 'num_total_miRNAs_fam','num_miRNAs_dif_trend', 'miRNAs_dif_expresion_trend', sep=',')
-    cat(text, file=paste(path_out, 'summary.csv', sep='/'),append=TRUE, sep='\n')
-  }
+  # Create summary file and add column names
+  text <- paste('species', 'Project', 'File', 'num_total_miRNAs_fam','num_miRNAs_dif_trend', 'miRNAs_dif_expresion_trend', sep=',')
+  cat(text, file=paste(path_out, 'summary.csv', sep='/'),append=TRUE, sep='\n')
 
   # Iterate species
-  path_data_annot <- paste(path_in_annot, data, data_type, "03-Annotation_tables", sep = "/")
+  path_data_annot <- paste(path_in_annot, data, data_type, "04-Annotation_tables_filtered", sep = "/")
   species_list = list.files(path = path_data_annot)
   for (species in species_list){
     
@@ -199,23 +196,22 @@ for (data in data_list){
       project_path_out_table <- paste(path_out, species, project, '01-DEA_results_annot', sep='/')
       dir.create(project_path_out_table, recursive = TRUE)
       
-      # Create output directory for plots only if they are significant miRNAs.
-      if (suffix == 'sig'){
-	      project_path_out_plot <- paste(path_out, species, project, '02-miRNAs_fam_trend_plot', sep='/')
-        dir.create(project_path_out_plot, recursive = TRUE)
-      }
+      # Create output directory for plots.
+	    project_path_out_plot <- paste(path_out, species, project, '02-miRNAs_fam_trend_plot', sep='/')
+      dir.create(project_path_out_plot, recursive = TRUE)
      
       # Iterate files
       for (file in files_list){
-	
         
         # Get the file name
+        print(file)
         file_elements = strsplit(file, '_annot', fixed =TRUE)
         file_name = file_elements[[1]][1]
         
         ### 1. CREATE FAMILY MIRNAS NAMES
+        ########################################################################
         
-        # Get the name of the directory where the results of the DEA are stored (sig or nosig)
+        # Get the name of the directory where the results of the DEA are stored (sig or raw)
         dea_data_dirs_list = list.files(path = path_in_dea)
         dea_data_dir_name <- dea_data_dirs_list[grep(paste("_", suffix, sep=""), dea_data_dirs_list)]
         
@@ -241,6 +237,7 @@ for (data in data_list){
               }
             }
             # Remove species id and '-'
+            print(annotation)
             annot_elements <- strsplit(annotation, '-', fixed =TRUE)
             if (length(annot_elements[[1]]) > 3){
               annot_wsp <- paste0(annot_elements[[1]][c(-1,-4)], collapse ='')
@@ -283,6 +280,7 @@ for (data in data_list){
           ids_table <- cbind(ids_table, general_annot = fam_id_v)
           
           ### 2. ADD ANNOTATION TO THE DEA-TABLE
+          ######################################################################
           
           # Create final table
           final_table = merge(dea_table, ids_table, by = 'seq')
@@ -291,53 +289,51 @@ for (data in data_list){
           # Save table
           file_name_table = paste(file_name, 'csv', sep='.')
           write.csv(final_table, paste(project_path_out_table, file_name_table, sep = '/'), quote = FALSE, row.names = FALSE)
+      	    
+    	    ### 3. CREATE THE PLOT
+    	    ######################################################################
+    	    
+          # Create boxplot 
+          p <- createBoxplot(final_table, 'general_annot', 'Shrunkenlog2FoldChange', 40,'','Slog2FC')
+  
+          # Create output file name
+          file_name_plot = paste(file_name, 'png', sep='.')
+        
+          # Save plot in output directory
+          ggsave(paste(project_path_out_plot, file_name_plot, sep = '/'), p)
+  
+        
+          ### 4. TABLE WITH DIFFUSE-TREND MIRNAS FAMILY
+          ######################################################################
+        
+          # Get miRNA family names
+          miRNAs_v <- unique(final_table$general_annot)
+        
+          # Select miRNAs families with diffuse trend
+          miRNAs_var <- c()
+          for (miRNA in miRNAs_v){
           
-          # Only for significant miRNAs
-	  if (suffix == 'sig'){
-	    
-	    ### 3. CREATE THE PLOT
-
-            # Create boxplot 
-            p <- createBoxplot(final_table, 'general_annot', 'Shrunkenlog2FoldChange', 40,'','Slog2FC')
-    
-            # Create output file name
-            file_name_plot = paste(file_name, 'png', sep='.')
+            # Get the miRNA Shrunkenlog2FoldChange vector
+            lfc_v <- na.omit(final_table[final_table$general_annot == miRNA,]$Shrunkenlog2FoldChange)
           
-            # Save plot in output directory
-            ggsave(paste(project_path_out_plot, file_name_plot, sep = '/'), p)
-	  
-          
-            ### 4. TABLE WITH DIFFUSE-TREND MIRNAS FAMILY
-          
-            # Get miRNA family names
-            miRNAs_v <- unique(final_table$general_annot)
-          
-            # Select miRNAs families with diffuse trend
-            miRNAs_var <- c()
-            for (miRNA in miRNAs_v){
-            
-              # Get the miRNA Shrunkenlog2FoldChange vector
-              lfc_v <- na.omit(final_table[final_table$general_annot == miRNA,]$Shrunkenlog2FoldChange)
-            
-              # If there are positives and negatives
-              if (any(lfc_v > 0) && any(lfc_v < 0)) {
-                miRNAs_var <- c(miRNAs_var, miRNA)
-              }
+            # If there are positives and negatives
+            if (any(lfc_v > 0) && any(lfc_v < 0)) {
+              miRNAs_var <- c(miRNAs_var, miRNA)
             }
-          
-            # If there are no miRNAs families with diffuse trend...
-            if (length(miRNAs_var) == 0){
-              miRNAs_var <- 'NULL'
-              num_miRNAs_d <- 0
-            } else {
-              num_miRNAs_d <- length(miRNAs_var)
-            }
-          
-            # Save it in summary file
-            miRNAs_txt <- paste(miRNAs_var, collapse = '/')
-            text <- paste(species, project, file_name, length(miRNAs_v), num_miRNAs_d, miRNAs_txt, sep=',')
-            cat(text, file=paste(path_out, 'summary.csv', sep='/'),append=TRUE, sep='\n')
-	  }
+          }
+        
+          # If there are no miRNAs families with diffuse trend...
+          if (length(miRNAs_var) == 0){
+            miRNAs_var <- 'NULL'
+            num_miRNAs_d <- 0
+          } else {
+            num_miRNAs_d <- length(miRNAs_var)
+          }
+        
+          # Save it in summary file
+          miRNAs_txt <- paste(miRNAs_var, collapse = '/')
+          text <- paste(species, project, file_name, length(miRNAs_v), num_miRNAs_d, miRNAs_txt, sep=',')
+          cat(text, file=paste(path_out, 'summary.csv', sep='/'),append=TRUE, sep='\n')
         }
       }
       # end files
