@@ -1,7 +1,7 @@
 
 ################################################################################
 ##                                                                            
-##  06-Diff_exp_analysis.r                                                          
+##  Diff_exp_analysis.r                                                          
 ##                                                                            
 ##  1. Exploratory analysis
 ##
@@ -12,9 +12,10 @@
 ##  first three principal components and calculates the Euclidean distances
 ##  between samples of the same condition or INTRA-group (e.g. treated1 -
 ##  treated2) and the distances between samples of different conditions or
-##  INTER-group (e.g. treated1 - control1). Then, it performs a Mann-whitney-
-##  wilcoxon test to check if there are differences between the INTRA and
-##  INTER-group distances previously calculated. 
+##  INTER-group distances previously calculated. Additionally, creates a
+##  dendrogram using the Simple Error Rate Estimation (SERE) obtained from
+##  comparing the different samples of the absolute counts table and a plot
+##  of mean vs variance comparison.
 ##
 ##  2. Differential expression analysis
 ##
@@ -54,6 +55,7 @@ suppressMessages(library(tidyverse))
 
 ################################## FUNCTIONS ###################################
 
+
 #' Get the command line arguments
 #' This function parse the command line arguments entered into the program.
 #'
@@ -62,28 +64,37 @@ suppressMessages(library(tidyverse))
 get_arguments <- function() {
   
   # create parser object
-  parser <- ArgumentParser(prog = '06-Diff_exp_analysis.r',
+  parser <- ArgumentParser(prog = 'Diff_exp_analysis.r',
                            description = '
     This program takes the tables of absolute counts from each project and
+    1. Exploratory analysis
+    
+    This program takes the tables of absolute counts from a project and
     performs a Principal Component Analysis (PCA) for each of the stress
     events considered in that project. From the results of this analysis,
-    it takes the coordinates generated for each sample from the values of
-    the first three principal components and calculates the Euclidean
-    distances between samples of the same condition or INTRA-group (e.g.
-    treated1 - treated2) and the distances between samples of different
-    conditions or INTER-group (e.g. treated1 - control1). Then, it performs
-    a Mann-Whitney-Wilcoxon test to check if there are differences between
-    the INTRA and INTER-group distances previously calculated. Then, the
-    program performs a differential expression analysis using DESeq2. The
-    absolute counts tables contain a group of control samples and different
-    treatment samples to which they are related. The differential expression
-    analysis is performed considering all possible combinations of control
-    vs treated (c_vs_t1, c_vs_t2, etc), so the program returns a result table
-    for each of them. The results table contains all the information provided
-    by the results() function of DESeq2 together with the log2FoldChange and
-    lfcSE from lfcShrink. In addition to the raw data obtained in the analysis,
-    this script also provides tables with those sequences with an adjusted
-    p-value lower than 0.05.',
+    it takes the coordinates generated for each sample from the values of the
+    first three principal components and calculates the Euclidean distances
+    between samples of the same condition or INTRA-group (e.g. treated1 - 
+    treated2) and the distances between samples of different conditions or
+    INTER-group (e.g. treated1 - control1). Then, it performs a Mann-whitney-
+    wilcoxon test to check if there are differences between the INTRA and
+    INTER-group distances previously calculated. Additionally, creates a
+    dendrogram using the Simple Error Rate Estimation (SERE) obtained from
+    comparing the different samples of the absolute counts table and a plot
+    of mean vs variance comparison.
+     
+    2. Differential expression analysis
+     
+    Then, the program performs a differential expression analysis using
+    DESeq2. The absolute counts tables contain a group of control samples and
+    different treatment samples to which they are related. The differential
+    expression analysis is performed considering all possible combinations of
+    control vs treated (c_vs_t1, c_vs_t2, etc), so the program returns a result
+    table for each of them. The results table contains all the information
+    provided by the results() function of DESeq2 together with the
+    log2FoldChange and lfcSE from lfcShrink. In addition to the raw data
+    obtained in the analysis, this script also provides tables with those
+    sequences with an adjusted p-value lower than 0.05.',
                            formatter_class = 'argparse.RawTextHelpFormatter')
   
   required <- parser$add_argument_group('required arguments')
@@ -222,18 +233,76 @@ euclidean_dist <- function(a, b) {
 }
 
 
+#' Creates a dendrogram using the Simple Error Rate Estimation (SERE) obtained
+#' from comparing the different samples of a DESeqDataSet
+#' 
+#' This function recieves a DESeq Dataset and uses the counts matrix to calculate
+#' the Simple Error Ratio Estimate (SERE) for each sample comparison within the
+#' dataset, a statistic that can determine whether two RNA-seq libraries are
+#' faithful replicates or globally different (Schulze, Kanwar & Gölzenleuchter,
+#' 2012). With the SERE obtained from these comparisons, it creates a distance
+#' matrix and generates a dendrogram, which it saves in the output directory
+#' together with the node points associated with the dendrogram (points at which
+#' a branch is bifurcates) and the SERE values obtained (matrix).
+#'
+#' @param dds DESeqDataSet
+#' @param path_dir_out Output directory path
+#' @return  A Matrix with the SERE values of each comparison
+#' @examples 
+#' csv_to_deseq_dataset("/home/minimind/Desktop/Results/arth/PRJNA277424_1.csv")
+#' @references
+#' Schulze, S. K., Kanwar, R., Gölzenleuchter, M., Therneau, T. M., & Beutler,
+#' A. S. (2012). SERE: single-parameter quality control and sample comparison
+#' for RNA-Seq. BMC genomics, 13, 524. https://doi.org/10.1186/1471-2164-13-524
+
 sere_dendrogram <- function(dds, path_dir_out){
   
-  ## 1. Build the matrix with SERE values
+  ## 0. Reduce the sample name if any of its fields exceeds 40 characters.
   ##############################################################################
   
   # Get the counts matrix
   df <- counts(dds)
+  new_samples_names <- c()
+  condition_v <- c()
+  # Iterate through the colnames (sample names)
+  for (sample in colnames(df)){
+    
+    # Get the sample fields
+    sample_fields <- strsplit(sample,"_")
+    
+    ## 0.1 Create the condition name
+    ############################################################################
+    # Delete replicate field
+    sample_fields_con <- sample_fields[[1]][-3]
+    # Count the number of characters for each field.
+    num_char_con <- sapply(sample_fields_con, nchar)
+    # Select the fields with fewer than 40 characters
+    sample_fields_con_filtered <- sample_fields_con[num_char_con <= 40]
+    # Rebuild the condition name
+    new_condition_name <- paste(sample_fields_con_filtered, collapse = "_")
+    # Save the condition name in a vector
+    condition_v <- c(condition_v, new_condition_name)
+    
+    ## 0.2 Create the sample name
+    ############################################################################
+    # Count the number of characters for each field.
+    num_char <- sapply(sample_fields[[1]], nchar)
+    # Select the fields with fewer than 40 characters
+    sample_fields_filtered <- sample_fields[[1]][num_char <= 40]
+    # Rebuild the sample name
+    new_sample_name <- paste(sample_fields_filtered, collapse = "_")
+    # Save the sample name in a vector
+    new_samples_names <- c(new_samples_names, new_sample_name)
+  }
+  
+  
+  ## 1. Build the matrix with SERE values
+  ##############################################################################
   
   # Create an empty matrix
   sere_dist <- matrix(NA, nrow = ncol(df), ncol = ncol(df))
-  colnames(sere_dist) <- colnames(df)
-  rownames(sere_dist) <- colnames(df)
+  colnames(sere_dist) <- new_samples_names
+  rownames(sere_dist) <- new_samples_names
   
   # Calculate SERE coefficent for each sample comparison
   for (i in 1:(ncol(df) - 1)){
@@ -247,17 +316,6 @@ sere_dendrogram <- function(dds, path_dir_out){
   
   # Save sere_dist object
   write.csv(sere_dist, file = paste0(path_dir_out,'/01-SERE_matrix.csv'), quote = FALSE)
-  
-  ## 2. Obtain a vector with the conditions of each sample.
-  ##############################################################################
-  
-  condition_v <- c()
-  for (samples in colnames(df)){
-    sample_elements = strsplit(samples,'_')
-    sample_elements <- sample_elements[[1]][-3]
-    condition <- paste(sample_elements, collapse = "_")
-    condition_v <- c(condition_v, condition)
-  }
   
   ## 3. Build the dendrogram
   ################################################################################
@@ -292,97 +350,17 @@ sere_dendrogram <- function(dds, path_dir_out){
   colors_to_use <- assigned_colors[order.dendrogram(dend)]
   
   ## 3.3. Add labels and colors
-  labels(dend) <- colnames(df)[order.dendrogram(dend)]
+  labels(dend) <- new_samples_names[order.dendrogram(dend)]
   labels_colors(dend) <- colors_to_use
+  dend <- dend %>% set("labels_cex", 0.5)
   
   ## 4.4. Create and save the plot
-  tryCatch(
-    {
       pdf(paste(path_dir_out, '/03-Dendrogram.pdf', sep = ''))
-      right_m <- round(max(nchar(colnames(df)))/2 - 2)
-      par(mar = c(4, 4, 2, right_m), cex=0.7)
+      right_m <- round(max(nchar(new_samples_names))/4)
+      par(mar = c(4, 4, 2, right_m))
       plot(dend, horiz= TRUE)
       abline(v = 1, col = "#666666", lty = 2)
-    },
-    error = function(e) {
-      if (grepl("figure margins too large", e$message)) {
-        
-        dev.off()
-        
-        # Iterate through the sample names
-        new_sample_names <- c()
-        condition_v <- c()
-        for (sample in colnames(df)){
-          # Find the names of the control samples and make them smaller.
-          if (grepl("control", sample, ignore.case = TRUE)){
-            # Create new sample name
-            sample_elements = strsplit(sample,'_')
-            sample_elements <- sample_elements[[1]][-2]
-            new_control_name <- paste(sample_elements, collapse = "_")
-            new_sample_names <- c(new_sample_names, new_control_name)
-            
-            # Create condition name
-            sample_elements = strsplit(new_control_name,'_')
-            sample_elements <- sample_elements[[1]][-2]
-            condition <- paste(sample_elements, collapse = "_")
-            condition_v <- c(condition_v, condition)
-            
-          } else {
-            # Save the sample name as new sample name
-            new_sample_names <- c(new_sample_names, sample)
-            
-            # Create condition name
-            sample_elements = strsplit(sample,'_')
-            sample_elements <- sample_elements[[1]][-3]
-            condition <- paste(sample_elements, collapse = "_")
-            condition_v <- c(condition_v, condition)
-          }
-        }
-        
-        # Create new dendrogram with renamed samples
-        colnames(sere_dist) <- new_sample_names
-        rownames(sere_dist) <- new_sample_names
-        dend <- as.dist(sere_dist) %>% hclust %>% as.dendrogram
-        
-        ## 3.2. Let's add some color
-        # Get unique names
-        unique_names <- unique(condition_v)
-        
-        # Check if i only have two levels
-        if (length(unique_names) == 2) {
-          # Use the 'Set1' palette for two levels
-          color_mapping <- setNames(c("#1B9E77", "#D95F02"), unique_names)
-        } else {
-          # Use the 'Dark2' palette for more than two levels
-          color_mapping <- setNames(brewer.pal(length(unique_names), 'Dark2'), unique_names)
-        }
-        
-        # Create a new vector of colors based on the original vector
-        assigned_colors <- color_mapping[condition_v]
-        
-        # But sort them based on their order in dend:
-        colors_to_use <- assigned_colors[order.dendrogram(dend)]
-        
-        ## 3.3. Add labels and colors
-        labels(dend) <- colnames(sere_dist)[order.dendrogram(dend)]
-        labels_colors(dend) <- colors_to_use
-        
-        # Create the plot
-        pdf(paste(path_dir_out, '/03-Dendrogram.pdf', sep = ''))
-        right_m <- round(max(nchar(colnames(sere_dist)))/2 - 2)
-        par(mar = c(4, 4, 2, right_m), cex=0.7)
-        plot(dend, horiz= TRUE)
-        abline(v = 1, col = "#666666", lty = 2)
-      
-      # Another error
-      } else {
-        cat(e$message, "\n")
-      }
-    },
-    finally = {
       dev.off()
-    }
-  )
   
   return(sere_dist)
 }
