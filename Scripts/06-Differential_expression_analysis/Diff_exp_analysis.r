@@ -355,12 +355,12 @@ sere_dendrogram <- function(dds, path_dir_out){
   dend <- dend %>% set("labels_cex", 0.5)
   
   ## 4.4. Create and save the plot
-      pdf(paste(path_dir_out, '/03-Dendrogram.pdf', sep = ''))
-      right_m <- round(max(nchar(new_samples_names))/4)
-      par(mar = c(4, 4, 2, right_m))
-      plot(dend, horiz= TRUE)
-      abline(v = 1, col = "#666666", lty = 2)
-      dev.off()
+  pdf(paste(path_dir_out, '/03-Dendrogram.pdf', sep = ''))
+  right_m <- round(max(nchar(new_samples_names))/4)
+  par(mar = c(4, 4, 2, right_m))
+  plot(dend, horiz= TRUE)
+  abline(v = 1, col = "#666666", lty = 2)
+  dev.off()
   
   return(sere_dist)
 }
