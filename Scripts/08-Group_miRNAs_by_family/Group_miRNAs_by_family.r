@@ -113,12 +113,15 @@ getArguments <- function(){
 #' @param max_labels X-axis label threshold
 #' @param x_lab X label
 #' @param y_lab Y label
+#' @param z Column used to set the colors of the points.
+#' @param legend_title Title of the legend. This argument will only be used if
+#'                     the 'z' argument has also been provided.
 #' @return  Ggplot2 boxplot
 #' @examples 
 #' createBoxplot(df, 'Column1', 'Column2', 40,'miRNAs','Slog2FC')
 
-createBoxplot <- function(data, x, y, max_labels, x_lab, y_lab) {
-
+createBoxplot <- function(data, x, y, max_labels, x_lab, y_lab, z, legend_title) {
+  
   # Get number of labels
   num_labels <- length(unique(data[[x]]))
 
@@ -141,8 +144,19 @@ createBoxplot <- function(data, x, y, max_labels, x_lab, y_lab) {
               axis.title.y = element_text(margin = margin(r = 10)),
               strip.text = element_blank()) +
         geom_hline(yintercept=0, color = '#333333') +
-        geom_point(color='#333333', size=0.5) +
         facet_wrap(~ split, ncol = 1, scales = "free_x")
+  
+  # Add optional options
+  if (!missing(z)) {
+    # Add colors to points
+    p <- p + geom_point(aes(colour = as.factor(.data[[z]])), size=0.5, show.legend = TRUE) +
+      scale_color_manual(values = c("#CB0000", "blue"))
+    # Add legend title
+    if (!missing(legend_title)){
+      p <- p + labs(colour = legend_title)
+    }
+  }
+
   
   # Return plot
   return(p)
@@ -175,7 +189,7 @@ for (data in data_list){
   cat(text, file=paste(path_out, 'summary.csv', sep='/'),append=TRUE, sep='\n')
 
   # Iterate species
-  path_data_annot <- paste(path_in_annot, data, data_type, "04-Annotation_tables_filtered", sep = "/")
+  path_data_annot <- paste(path_in_annot, data, data_type, "03-Annotation_tables", sep = "/")
   species_list = list.files(path = path_data_annot)
   for (species in species_list){
     
@@ -204,7 +218,6 @@ for (data in data_list){
       for (file in files_list){
         
         # Get the file name
-        print(file)
         file_elements = strsplit(file, '_annot', fixed =TRUE)
         file_name = file_elements[[1]][1]
         
@@ -223,7 +236,7 @@ for (data in data_list){
         # If dataframe is not empty
         if (nrow(ids_table) != 0){
           # Reorder columns and replace NUll with NA
-          ids_table <- ids_table[, c(1,2,4,3,5)] %>% replace(.=='NULL', NA)
+          ids_table <- ids_table[, c(1,2,4,6,3,5,7,8)] %>% replace(.=='NULL', NA)
           
           # Iterate rows
           fam_id_v = c()
@@ -237,7 +250,6 @@ for (data in data_list){
               }
             }
             # Remove species id and '-'
-            print(annotation)
             annot_elements <- strsplit(annotation, '-', fixed =TRUE)
             if (length(annot_elements[[1]]) > 3){
               annot_wsp <- paste0(annot_elements[[1]][c(-1,-4)], collapse ='')
@@ -293,8 +305,9 @@ for (data in data_list){
     	    ### 3. CREATE THE PLOT
     	    ######################################################################
     	    
-          # Create boxplot 
-          p <- createBoxplot(final_table, 'general_annot', 'Shrunkenlog2FoldChange', 40,'','Slog2FC')
+          # Create boxplot
+          final_table$length_condition <- ifelse(final_table$length <= 22, "<= 22", "> 22")
+          p <- createBoxplot(final_table, 'general_annot', 'Shrunkenlog2FoldChange', 40,'','Slog2FC', z='length_condition', legend_title = 'Sequence length')
   
           # Create output file name
           file_name_plot = paste(file_name, 'png', sep='.')
