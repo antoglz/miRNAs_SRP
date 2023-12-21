@@ -20,7 +20,8 @@
 #   generates files where sequences are filtered based on whether they have
 #   been annotated in at least two of the three databases. This program also
 #   generates a summary file with the number of sequences annotated for each of
-#   the three cases: miRNAs, and precursors.
+#   the three cases: miRNAs, and precursors; and summary file with the number
+#   of sequences of each length within a range of 20-25nt.
 #
 #   Author: Antonio Gonzalez Sanchez
 #   Date: 26/01/2023
@@ -562,6 +563,9 @@ main () {
     # Get arguments
     arguments_management "$@"
 
+    # Create directory for temporary files
+    mkdir -p ./tmp
+
     # Way 3: Get the valid subprojects from the provided list
     [ "$way" -eq 3 ] && valid_subprojects=$(filter_subprojects_by_mww_pvalue "$ea_table" "$mww_pvalue")
 
@@ -575,11 +579,13 @@ main () {
     references_list=$(ls $path_mirbase)
     for reference in $references_list
     do
-        # Create output directory and summary file path
+
+        # Create output directory and summary files path
         reference_name=${reference%.fa} # hairpin.fa or mature.fa
         mkdir -p $path_out/miRNA_annotation_$suffix/$reference_name
         path_out_summary=$path_out/miRNA_annotation_$suffix/$reference_name/summary.csv
-
+        path_out_summary_len=$path_out/miRNA_annotation_$suffix/$reference_name/summary_len.tsv
+        
         # Iterate species
         species_list=$(ls $path_in)
         for species in $species_list
@@ -771,6 +777,13 @@ main () {
                             num_miRNAs=$(tail -n +2 $path_annotation_files/$out_name"_annot_len.csv" | wc -l)
                             num_miRNAs_filtered=$(tail -n +2 $path_annotation_files_filt/$out_name"_annot_filt.csv" | wc -l)
 
+                            # Create length summary file
+                            awk -F ',' -v species="$species" -v project="$out_name" 'NR>1 {count[$8]++} END {printf "%s\t%s\t", species, project; for (i=20; i<=25; i++) printf "%s%s", count[i] ? count[i] : 0, (i<25) ? "\t" : ""; printf "\n"}' $path_annotation_files/$out_name"_annot_len.csv" >> ./tmp/summary_len_"$reference_name"_tmp.tsv
+                            awk -F ',' -v species="$species" -v project="$out_name" 'NR>1 {count[$8]++} END {printf "%s\t%s\t", species, project; for (i=20; i<=25; i++) printf "%s%s", count[i] ? count[i] : 0, (i<25) ? "\t" : ""; printf "\n"}' $path_annotation_files_filt/$out_name"_annot_filt.csv" >> ./tmp/summary_len_"$reference_name"_filt_tmp.tsv
+                            merge_tsv_files ./tmp/summary_len_"$reference_name"_tmp.tsv ./tmp/summary_len_"$reference_name"_filt_tmp.tsv 2 2 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.3,2.4,2.5,2.6,2.7,2.8 ./tmp/summary_len_"$reference_name"_join_tmp.tsv
+                            cat ./tmp/summary_len_"$reference_name"_join_tmp.tsv >> $path_out_summary_len
+                            rm ./tmp/*tmp.tsv
+
                             # Save it in summary file
                             echo $species","$out_name","$num_miRNAs","$num_miRNAs_filtered >> $path_out_summary
                             
@@ -804,22 +817,41 @@ main () {
     done
     # end reference loop
 
-    # Create final summary file
+    ### Create final summary file
     path_miRNAs_summary=$path_out/miRNA_annotation_$suffix/mature/summary.csv
     path_precursor_summary=$path_out/miRNA_annotation_$suffix/hairpin/summary.csv
 
     # Sort files to be joined
-    LANG=en_EN sort -k 2 -t ',' $path_miRNAs_summary -o $path_out/miRNA_annotation_$suffix/mature/summary"_sort.csv"
-    LANG=en_EN sort -k 2 -t ',' $path_precursor_summary -o $path_out/miRNA_annotation_$suffix/hairpin/summary"_sort.csv" 
+    LANG=en_EN sort -k 2 -t ',' $path_miRNAs_summary -o $path_out/miRNA_annotation_$suffix/mature/summary_sort.csv
+    LANG=en_EN sort -k 2 -t ',' $path_precursor_summary -o $path_out/miRNA_annotation_$suffix/hairpin/summary_sort.csv
 
     # Join summary files
     LANG=en_EN join -1 2 -2 2 -t ',' \
             -o 1.1,1.2,1.3,1.4,2.3,2.4  \
             $path_out/miRNA_annotation_$suffix/mature/summary"_sort.csv" \
-            $path_out/miRNA_annotation_$suffix/hairpin/summary"_sort.csv"  > $path_out/miRNA_annotation_$suffix/summary.csv
-    sed -i '1 i\Species,Experiment,Annot_miRNAs,Annot_miRNAs_filtered,Annot_precursor,Annot_precursor_filtered' $path_out/miRNA_annotation_$suffix/summary.csv
+            $path_out/miRNA_annotation_$suffix/hairpin/summary"_sort.csv"  > ./tmp/summary_tmp.csv
+    LANG=en_EN sort -k 1 -t ',' ./tmp/summary_tmp.csv -o $path_out/miRNA_annotation_$suffix/summary_annot.csv
+    sed -i '1 i\Species,Stress_event,Annot_miRNAs,Annot_miRNAs_filtered,Annot_precursor,Annot_precursor_filtered' $path_out/miRNA_annotation_$suffix/summary_annot.csv
+
+    
+    ### Create final length summary file
+    path_miRNAs_summary_len=$path_out/miRNA_annotation_$suffix/mature/summary_len.tsv
+    path_precursor_summary_len=$path_out/miRNA_annotation_$suffix/hairpin/summary_len.tsv
+
+    # Sort files to be joined
+    LANG=en_EN sort -k 2 -t$'\t' $path_miRNAs_summary_len -o $path_out/miRNA_annotation_$suffix/mature/summary_len_sort.tsv
+    LANG=en_EN sort -k 2 -t$'\t' $path_precursor_summary_len -o $path_out/miRNA_annotation_$suffix/hairpin/summary_len_sort.tsv
+
+    # Join summary files
+    LANG=en_EN join -1 2 -2 2 -t$'\t' \
+            -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10,1.11,1.12,1.13,1.14,2.3,2.4,2.5,2.6,2.7,2.8,2.9,2.10,2.11,2.12,2.13,2.14 \
+            $path_out/miRNA_annotation_$suffix/mature/summary_len_sort.tsv \
+            $path_out/miRNA_annotation_$suffix/hairpin/summary_len_sort.tsv  > ./tmp/summary_len_tmp.csv
+    LANG=en_EN sort -k 1 -t$'\t' ./tmp/summary_len_tmp.csv -o $path_out/miRNA_annotation_$suffix/summary_len.csv
+    sed -i '1 i\Species,Stress_event,20_miRNAs,21_miRNAs,22_miRNAs,23_miRNAs,24_miRNAs,25_miRNAs,20_miRNAs_filt,21_miRNAs_filt,22_miRNAs_filt,23_miRNAs_filt,24_miRNAs_filt,25_miRNAs_filt,20_precursor,21_precursor,22_precursor,23_precursor,24_precursor,25_precursor,20_precursor_filt,21_precursor_filt,22_precursor_filt,23_precursor_filt,24_precursor_filt,25_precursor_filt' $path_out/miRNA_annotation_$suffix/summary_len.csv
 
     # Delete temporary files
+    rm -r ./tmp
     rm $path_out/miRNA_annotation_$suffix/mature/*summary*
     rm $path_out/miRNA_annotation_$suffix/hairpin/*summary*
 
