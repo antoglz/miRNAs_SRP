@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1                      # Maximum number of cores to use
 #SBATCH --time=01-00:00:00              # Time limit to execute the job
 #SBATCH --mem=2G                        # Required Memory
-#SBATCH --cpus-per-task=20              # CPUs assigned per task.
+#SBATCH --cpus-per-task=30              # CPUs assigned per task.
 #SBATCH --qos=short                     # QoS: short,medium,long,long-mem
 
 #******************************************************************************
@@ -23,7 +23,7 @@
 #******************************************************************************
 
 # Input paths
-path_in=/home/gonsanan/miRNAs_srp_project/Results/06-Diff_exp_analysis
+path_in=/home/gonsanan/miRNAs_srp_project/Results/06-Diff_exp_analysis/02-DEA_sig
 path_mirbase=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_identification/02-Filtered_databases/miRBase
 path_PmiREN=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_identification/02-Filtered_databases/PmiREN
 path_sRNAanno=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_identification/02-Filtered_databases/sRNAanno
@@ -35,7 +35,7 @@ mww_pvalue=0.05
 path_out=/home/gonsanan/miRNAs_srp_project/Results/07-Identification_miRNAs
 
 # Threads
-num_threads=20
+num_threads=30
 
 # Execution 
 bash miRNAs_annotation.sh \
