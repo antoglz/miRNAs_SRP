@@ -225,7 +225,7 @@ create_temporary_databases(){
     path_dir_in=${path_file_in%/*}
     
     # Get miRBase and PmiREN ids
-    id=$(grep $species_id $ids_table_file | awk -F"," '{print $2}')
+    id=$(grep $species_id"," $ids_table_file | awk -F"," '{print $2}')
     id_up=`echo ${id:0:1} | tr '[a-z]' '[A-Z]'`${id:1}
     
     # Replace uracils with thymines
