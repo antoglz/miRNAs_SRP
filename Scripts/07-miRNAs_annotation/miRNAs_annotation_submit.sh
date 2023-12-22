@@ -2,50 +2,51 @@
 
 #SBATCH --job-name=ident_miRNAs         # Job name to show with squeue
 #SBATCH --output=ident_miRNAs_%j.out    # Output file
-#SBATCH --ntasks=1                 	    # Maximum number of cores to use
-#SBATCH --time=01-00:00:00          	# Time limit to execute the job
-#SBATCH --mem=2G           		        # Required Memory
-#SBATCH --cpus-per-task=30          	# CPUs assigned per task.
-#SBATCH --qos=short                	    # QoS: short,medium,long,long-mem
+#SBATCH --ntasks=1                      # Maximum number of cores to use
+#SBATCH --time=01-00:00:00              # Time limit to execute the job
+#SBATCH --mem=2G                        # Required Memory
+#SBATCH --cpus-per-task=20              # CPUs assigned per task.
+#SBATCH --qos=short                     # QoS: short,medium,long,long-mem
 
 #******************************************************************************
 #  
-#   07-miRNAs_identification_exe.sh
+#   miRNAs_annotation_submit.sh
 #
 #   The program is designed to identify miRNAs from tables of differentially
-#   expressed sequences for multiple species using the 07-miRNAS_identifi-
-#   cation.sh programm.
+#   expressed sequences for multiple species using the miRNAS_annotation.sh
+#   programm.
 #
 #   Author: Antonio Gonzalez Sanchez
-#   Date: 16/02/2021
-#   Version: 1.0 
+#   Date: 22/12/2023
+#   Version: 2.0 
 #
 #******************************************************************************
 
 # Input paths
-path_in=/storage/ncRNA/Projects/TFM_AntonioG/Results/Metaanalysis_miRNA/06-DiffExpAnalysis_res
-path_mirbase=/storage/ncRNA/Projects/TFM_AntonioG/Additional_info/Metaanalysis_miRNA/10-miRNAsAnnotation/01-Databases/miRBase
-path_PmiREN=/storage/ncRNA/Projects/TFM_AntonioG/Additional_info/Metaanalysis_miRNA/10-miRNAsAnnotation/01-Databases/PmiREN
-path_ids_table=/storage/ncRNA/Projects/TFM_AntonioG/Additional_info/Metaanalysis_miRNA/10-miRNAsAnnotation/species_id.csv
+path_in=/home/gonsanan/miRNAs_srp_project/Results/06-Diff_exp_analysis
+path_mirbase=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_identification/02-Filtered_databases/miRBase
+path_PmiREN=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_identification/02-Filtered_databases/PmiREN
+path_sRNAanno=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_identification/02-Filtered_databases/sRNAanno
+path_ids_table=/storage/ncRNA/Projects/sRNA_project/00-Species_information/species_id.csv
+ea_table=/home/gonsanan/miRNAs_srp_project/Results/05-Exploratory_analysis/ea_summary.csv
 mww_pvalue=0.05
-ea_table=/home/antonio/Escritorio/pruebas/prueba_tabla_anotación/Results/05-PCA/ea_summary.csv
 
 # Ouput paths
-path_out=/storage/ncRNA/Projects/TFM_AntonioG/Results/Metaanalysis_miRNA/07-Identification_miRNAs_res
+path_out=/home/gonsanan/miRNAs_srp_project/Results/07-Identification_miRNAs
 
 # Threads
-num_threads=30
+num_threads=20
 
 # Execution 
 bash miRNAs_annotation.sh \
-    --input $path_in \
-    --output $path_out \
-    --mirbase $path_mirbase \
-    --pmiren $path_PmiREN \
-    --species-ids $path_ids_table \
-    --threads $num_threads \
-    --mww-pvalue $mww_pvalue \
-    --ea-table $ea_table
-
+     --input $path_in \
+     --output $path_out \
+     --mirbase $path_mirbase \
+     --pmiren $path_PmiREN \
+     --srnaanno $path_sRNAanno \
+     --species-ids $path_ids_table \
+     --threads $num_threads \
+     --ea-table $ea_table \
+     --mww-pvalue $mww_pvalue
 
 exit 0
