@@ -849,6 +849,7 @@ main () {
             $path_out/miRNA_annotation_$suffix/hairpin/summary_len_sort.tsv  > ./tmp/summary_len_tmp.csv
     LANG=en_EN sort -k 1 -t$'\t' ./tmp/summary_len_tmp.csv -o $path_out/miRNA_annotation_$suffix/summary_len.csv
     sed -i '1 i\Species,Stress_event,20_miRNAs,21_miRNAs,22_miRNAs,23_miRNAs,24_miRNAs,25_miRNAs,20_miRNAs_filt,21_miRNAs_filt,22_miRNAs_filt,23_miRNAs_filt,24_miRNAs_filt,25_miRNAs_filt,20_precursor,21_precursor,22_precursor,23_precursor,24_precursor,25_precursor,20_precursor_filt,21_precursor_filt,22_precursor_filt,23_precursor_filt,24_precursor_filt,25_precursor_filt' $path_out/miRNA_annotation_$suffix/summary_len.csv
+    sed -i 's/\t/,/g' $path_out/miRNA_annotation_$suffix/summary_len.csv
 
     # Delete temporary files
     rm -r ./tmp
