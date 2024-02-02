@@ -1,7 +1,7 @@
 
 ################################################################################
 ##                                                                            
-##  08-Group_miRNAs_by_family.r
+##  Group_miRNAs_by_family.r
 ##
 ##  This program groups the miRNAs identified in families to study whether     
 ##  all the miRNAs belonging to the same family follow the same trend in
@@ -13,7 +13,8 @@
 ##                                                                            
 ##                                                                            
 ##  Author: Antonio Gonzalez Sanchez                                         
-##  Date: 10/01/2023                                                          
+##  Date: 12/20/2023
+##  Version: 2.0
 ##                                                                            
 ################################################################################
 
@@ -38,7 +39,7 @@ suppressMessages(library(ggplot2))
 getArguments <- function(){
   
   # create parser object
-  parser <- ArgumentParser(prog='08-Group_miRNAs_by_family.r',
+  parser <- ArgumentParser(prog='Group_miRNAs_by_family.r',
                            description= '
    This program groups the miRNAs identified in families to study whether all
    the miRNAs belonging to the same family follow the same trend in terms of
