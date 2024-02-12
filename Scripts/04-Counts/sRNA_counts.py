@@ -3,7 +3,7 @@
 
 #******************************************************************************
 #  
-#   04-Counts_and_sRNADatabase.py
+#   sRNA_Counts.py
 #
 #   This program generates the absolute counts and Reads Per Million (RPM)
 #   tables for a specific project using the trimmed and filtered libraries,
@@ -14,8 +14,8 @@
 #   1. Filter the libraries by RNAcentral (Optional)
 #
 #   Align the sequences of each library with the rRNA, tRNA, snRNA and
-#   snoRNA sequences contained in the RNAcentral database for
-#   identification and elimination.
+#   snoRNA sequences contained in the RNAcentral database for identification
+#   and elimination.
 #
 #   2. Create the absolute counts and RPM tables for each library.
 #
@@ -25,17 +25,24 @@
 #   
 #               RPM = absolute count * 1000000 / size library.
 #  
-#   3. Join all the RPM tables and all the absolute counts tables in
-#      two tables.
+#   3. Create count tables for each project and subproject.
 #
 #   Once the absolute counts and RPM have been calculated for the sequences
 #   of each library, a table is created for each type of count by joining
-#   the results of the libraries belonging to the same project.
+#   the results of the libraries belonging to the same project. Additionally,
+#   count tables are also generated for each of the subprojects within the
+#   project in question. These tables consist of the libraries from one of
+#   the control groups and the libraries from the treatment groups associated
+#   with that control group. The subproject tables are filtered to remove
+#   sequences with a low count number. Sequences that do not have more
+#   than 5 counts in at least 5 libraries are discarded. If the project has
+#   fewer than 5 libraries, this condition is applied using the maximum
+#   number of libraries in the project.
 #
 #
 #   Authors: Antonio Gonzalez Sanchez, Pascual Villalba Bermell (pvbermell)
-#   Date: 20/09/2023
-#   Version: 2.0
+#   Date: 02/12/2024
+#   Version: 3.0
 #
 #******************************************************************************
 
@@ -165,6 +172,7 @@ def insert_to_database (database_name: str, table_name: str, data_path: str,
         if exit:
             sys.exit()
 
+
 def merge_counts_tables_processing (list_of_tuples: list) -> None:
     '''
     This function is used to parallelize the merge_counts_tables function,
@@ -216,6 +224,7 @@ def merge_counts_tables_processing (list_of_tuples: list) -> None:
     # Wait for all processes to finish
     for p in processes:
         p.join()
+
 
 def merge_counts_tables (database_name: str, data_in: list, type_data: str,
                          type_tables: str, mode: str='inner') -> None:
@@ -521,7 +530,7 @@ def rep_counts_avg(database_name: str, table: str, new_table: str) -> str:
 ### 2. FORMAT CONVERSION FUNCTIONS
 
 def sql_to_csv(database: str, table: str, path_out: str, columns: list,
-               red_sample_dic: dict) -> None:
+               red_sample_dic: dict, filter=False) -> None:
     """
     This function writes counts tables from a specific Sqlite database in .csv
     file.
@@ -567,6 +576,7 @@ def sql_to_csv(database: str, table: str, path_out: str, columns: list,
         ## 4. Write table in .csv file
         print('Exporting data into CSV...')
         sys.stdout.flush()
+
         with open(path_out, 'w') as csv_file:
             csv_writer = csv.writer(csv_file)
 
@@ -577,9 +587,28 @@ def sql_to_csv(database: str, table: str, path_out: str, columns: list,
                 sample_name = red_sample_dic[red_name] # p.e. control_salt_1_5d
                 original_columns.append(sample_name)
 
-            # Write columns names and data
+            # Write the header
             csv_writer.writerow(original_columns)
-            csv_writer.writerows(cursor)
+            
+            # Sequences will be filtered to remove those with low count numbers
+            if filter:
+
+                # Iterate SQLite cursor object          
+                for i, line in enumerate(cursor):
+
+                    # Select sequences that have more than 5 counts in at least 5
+                    # sample
+                    count = len([j for j in line[1:] if j > 5])
+                    if count >= 5:
+                        csv_writer.writerow(line)
+
+                    # If there are less than 5 samples, check that the condition is
+                    # fulfilled for all of them.
+                    elif count < 5 and count == len(line) - 1:
+                        csv_writer.writerow(line)
+            else:
+                # Write columns names and data
+                csv_writer.writerows(cursor)
     
     finally:    
         # Commit work and close connection
@@ -944,6 +973,37 @@ def all_rpm_counts (abs_list: list, path_read: str, path_write: str) -> None:
 
 
 ### 5. METADATA FUNCTIONS
+                    
+def get_project_metadata (path: str) -> pd.DataFrame:
+    '''
+    This function extracts the sample metadata from the metadata table of the
+    project to which it belongs. 
+
+    Parameters
+    ----------
+    path : str
+        Absolute path of the txt file containing the project metadata.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        Metadata dataframe of the sample of interest.
+    '''
+
+    try:
+        # Read metadata csv file
+        metadata_table = np.genfromtxt(path, delimiter=',', dtype=None, encoding=None,  names=True)
+
+        # Create dataframe
+        df = pd.DataFrame(metadata_table)
+
+    except Exception as e:
+        print('Unable to read metadata table.')
+        print(f'Exception: {e}')
+        sys.exit()
+    else:
+        return df
+    
 
 def get_sample_metadata(path: str, sample: str) -> list:
     '''
@@ -1071,8 +1131,117 @@ def parse_fasta_file(fasta_file: str) -> None:
         sys.exit()
 
 
-def fusion_tables (list_abs: list, list_rpm: list, path_write: str,
-                  path_metadata: str, mode: str) -> None:
+def create_project_groups (project_samples, project_metadata):
+    '''
+    This function receives a list of samples from a project and groups them
+    according to the subproject they belong to. It does this by comparing
+    control samples with treatment samples to identify which treatment samples
+    are associated with which control samples. Once identified, it groups them
+    in a list together with their control samples. The function returns a list
+    containing the list corresponding to each of these groups.
+    
+    Parameters
+    ----------
+    project_samples : list
+        Project samples list
+    project_metadata : str
+        Absolute path of project metadata file
+
+    Returns
+    -------
+    groups_list : list
+        List of sample groups
+    '''
+
+    # Get project metadata
+    meta_table = get_project_metadata(project_metadata)
+    infvar = get_informative_variables(project_metadata)
+
+    # Get column names
+    columns = [meta_table.columns[var] for var in infvar]
+    del columns[2] # Delete replicate column
+
+    # Required lists
+    controls_condition = []
+    treated_condition = []
+    control_samples = []
+    treated_samples = []
+
+    # Separate controls and treatments into two separate lists
+    for sample in project_samples:
+        # Discard sequence column
+        if sample == 'seq':
+            continue
+        # Delete replicate column
+        sample_elements = sample.split('_')
+        del sample_elements[2]
+        # Save control samples
+        if sample.startswith('control'):
+            # Save control samples in list 
+            control_samples.append(sample)
+            # Save control conditions in list
+            if sample_elements not in controls_condition:
+                controls_condition.append(sample_elements)
+                
+        # Save treated conditions in list
+        elif sample.startswith('treated'):
+            treated_samples.append(sample)
+            if sample_elements not in treated_condition:
+                treated_condition.append(sample_elements)
+
+    # Create matching matrix
+    matrix = np.zeros((len(controls_condition), len(treated_condition)))
+
+    # Checking the similarity between controls and treatments
+    for i, control_sample in enumerate(controls_condition):
+        for j, treated_sample in enumerate(treated_condition):
+            for k, column in enumerate(columns):
+                # If the level is not defined, continue or it is Replicate
+                if '.0' in control_sample[k] or column == 'Replicate':
+                    continue
+                # If there is more than one level, separate them.
+                if control_sample[k].find(':'):
+                    controrl_sample_ele = control_sample[k].split(':')
+                    # If the levels match, add one to the counter.
+                    if treated_sample[k] in controrl_sample_ele:
+                        matrix[i][j] += 1
+                # If the levels match, add one to the counter.
+                elif treated_sample[k] == control_sample[k]:
+                        matrix[i][j] += 1
+
+    # Grouping controls and treatments by subproject
+    groups_list = [[] for x in range(len(controls_condition))]
+    done = []
+    for i in range(len(matrix)):
+        max_v = max(matrix[i])
+        # Add control samples
+        for control in control_samples:
+            if control in done:
+                continue
+            control_elements = control.split('_')
+            del control_elements[2]
+            if control_elements == controls_condition[i]:
+                done.append(control)
+                groups_list[i].append(control)
+        
+        # Add treated samples
+        for j in range(len(matrix[i])):
+            if matrix[i][j] == max_v:
+                for treated in treated_samples:
+                    if treated in done:
+                        continue
+                    treated_elements = treated.split('_')
+                    del treated_elements[2]
+                    if treated_elements == treated_condition[j]:
+                        groups_list[i].append(treated)
+                        done.append(treated)
+    
+    return groups_list
+
+
+def create_count_tables (list_abs: list, list_rpm: list, path_write_project: str,
+                         path_write_subproject: str, path_metadata: str,
+                         mode: str) -> None:
     '''
     This function merges all absolute count tables into a single table and all
     RPM tables into another different table. In addition, it also creates a
@@ -1096,6 +1265,7 @@ def fusion_tables (list_abs: list, list_rpm: list, path_write: str,
     '''
 
     # Variables
+    sample_name_list = []
     red_sample_list = []
     red_sample_dic = {}
     red_condition_dic = {}
@@ -1175,7 +1345,9 @@ def fusion_tables (list_abs: list, list_rpm: list, path_write: str,
         # Replicate name. Necessary to create the abs and RPM tables.
         new_red_name = f't_{str(condition_num)}_r_{str(replicate_num)}' # p.e t_1_r_3
         red_sample_dic[new_red_name] =  sample_name # Replicate
+        # Save red_name and sample name into different lists
         red_sample_list.append(new_red_name)
+        sample_name_list.append(sample_name)
         print(f' ({new_red_name})')
 
         # Condition name. Necessary to create the tables with the abs and RPM averages
@@ -1235,8 +1407,8 @@ def fusion_tables (list_abs: list, list_rpm: list, path_write: str,
     ###########################################################################
 
     # Output paths
-    path_write_abs = f'{path_write}/fusion_abs-{mode}.csv'
-    path_write_rpm = f'{path_write}/fusion_rpm-{mode}.csv'
+    path_write_abs = f'{path_write_project}/fusion_abs-{mode}.csv'
+    path_write_rpm = f'{path_write_project}/fusion_rpm-{mode}.csv'
 
     # Sort sample list
     red_sample_list.sort()
@@ -1256,8 +1428,8 @@ def fusion_tables (list_abs: list, list_rpm: list, path_write: str,
     ###########################################################################
 
     # Out paths
-    path_write_mean_abs = f'{path_write}/fusion_abs_mean-{mode}.csv'
-    path_write_mean_rpm = f'{path_write}/fusion_rpm_mean-{mode}.csv'
+    path_write_mean_abs = f'{path_write_project}/fusion_abs_mean-{mode}.csv'
+    path_write_mean_rpm = f'{path_write_project}/fusion_rpm_mean-{mode}.csv'
 
     ## Calculate average
     # Abs counts
@@ -1285,6 +1457,40 @@ def fusion_tables (list_abs: list, list_rpm: list, path_write: str,
     sql_to_csv(db_rpm_name, final_table + '_avg', path_write_mean_rpm, list_condition, red_condition_dic)
     print('Files saved!\n')
     sys.stdout.flush()
+
+
+    ## 5. CREATE COUNT TABLES FOR THE SUBPROJECTS
+    ########################################################################
+
+    # Create subgroups of samples depending on their relationship
+    project_groups = create_project_groups(sample_name_list, path_metadata)
+
+    # Create an empty list of lists, where we will separate the table names
+    # into the groups we have previously created.
+    list_of_groups_tables_names = [[] for _ in range(len(project_groups))]
+
+    # Iterate through the generated groups
+    for i, group in enumerate(project_groups):
+        # Iterate through the samples of each group
+        for sample in group:
+            # Find the table name assigned to this sample
+            table_red_name = next((clave for clave, valor in red_sample_dic.items() if valor == sample), None)
+            # Save the name in the corresponding group of the previously created list
+            list_of_groups_tables_names[i].append(table_red_name)
+
+
+    # Write the subprojects in different files
+    for i, tables_group in enumerate(list_of_groups_tables_names):
+
+        # Create output paths 
+        path_write_abs_file = f'{path_write_subproject}/{project_name}_{i + 1}.csv' 
+
+        # Sort sample list
+        tables_group.sort()
+
+        # Write subproject table
+        sql_to_csv(db_abs_name, final_table, path_write_abs_file, tables_group, red_sample_dic, filter=True)
+
 
     ## 8. DELETE DATABASES AFTER USE
     ###########################################################################
@@ -1501,8 +1707,8 @@ def main():
     ## Paths
     path_read_join_abs = path_write_abs
     path_read_join_rpm = path_write_rpm
-    folder_write_join = f'03-Fusion_count_tables{suffix}'
-    path_write_join = f'{path_res}/{folder_write_join}/{species}/{project}'
+    path_write_count_table_project = f'{path_res}/03-Fusion_count_tables{suffix}/{species}/{project}'
+    path_write_count_table_subproject = f'{path_res}/04-Projects_divided_by_subprojects/{species}/{project}'
     
     ## List of the input csv files paths (absolute counts)
     csv_files_list_abs = []
@@ -1524,10 +1730,16 @@ def main():
     print('\nJOINING THE RPM AND ASBOLUTE TABLES IN TWO TABLES.\n')
     print('Building the directory...\n')
     sys.stdout.flush()
+    signal = False
     try:
-        os.makedirs(path_write_join)
+        os.makedirs(path_write_count_table_project)
+        signal = True
+        os.makedirs(path_write_count_table_subproject)
     except FileExistsError:
-        print(f'The folder {path_write_join.split("/")[-2]} already exists.')
+        if not signal:
+            print(f'The folder {path_write_count_table_project.split("/")[-2]} already exists.')
+        else:
+            print(f'The folder {path_write_count_table_subproject.split("/")[-2]} already exists.')
         pass
 
     # Ruta de los metadatos del proyecto en cuestion
@@ -1536,7 +1748,12 @@ def main():
     # Join tables
     print('\nJoining the tables mode = outer between replicates...')
     sys.stdout.flush()
-    fusion_tables (csv_files_list_abs, csv_files_list_rpm, path_write_join, path_metadata_abs, 'outer')
+    create_count_tables (csv_files_list_abs,
+                         csv_files_list_rpm,
+                         path_write_count_table_project,
+                         path_write_count_table_subproject,
+                         path_metadata_abs,
+                         'outer')
 
     ###############################################################
         
