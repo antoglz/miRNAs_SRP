@@ -706,7 +706,6 @@ main () {
                             [ $? -ne 0 ] && echo "Species $species not found in the miRBase database!" || printf "Done!\n"
 
                             # Alignment with miRBase (Rest database. No mismatches)
-                            printf "bowtie -x $path_mirbase/mirbase_rest_idx/mirbase_rest --best -v $mismatches -k1 --no-unal -p $threads -f _dea_.fasta -S sam_mirbase_rest.sam"
                             printf "Bowtie alignment with miRBase (others database)...\n"
                             results_mirbase_others=$(bowtie -x $path_mirbase/mirbase_rest_idx/mirbase_rest \
                                                             --best -v $mismatches -k1 --no-unal -p $threads \
