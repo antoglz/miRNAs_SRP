@@ -190,7 +190,7 @@ for (data in data_list){
   cat(text, file=paste(path_out, 'summary.csv', sep='/'),append=TRUE, sep='\n')
 
   # Iterate species
-  path_data_annot <- paste(path_in_annot, data, data_type, "03-Annotation_tables", sep = "/")
+  path_data_annot <- paste(path_in_annot, data, data_type, "04-Annotation_tables_filtered", sep = "/")
   species_list = list.files(path = path_data_annot)
   for (species in species_list){
     
