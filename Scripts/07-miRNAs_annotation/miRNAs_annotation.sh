@@ -608,12 +608,12 @@ main () {
             mkdir -p $path_sRNAanno/sRNAanno_rest_idx
 
             # Index databases
-            bowtie2-build --threads $threads $path_mirbase/database_species.fasta $path_mirbase/mirbase_species_idx/mirbase_species > /dev/null 2>&1
-            bowtie2-build --threads $threads $path_mirbase/database_rest.fasta $path_mirbase/mirbase_rest_idx/mirbase_rest > /dev/null 2>&1
-            bowtie2-build --threads $threads $path_PmiREN/database_species.fasta $path_PmiREN/PmiREN_species_idx/PmiREN_species > /dev/null 2>&1
-            bowtie2-build --threads $threads $path_PmiREN/database_rest.fasta $path_PmiREN/PmiREN_rest_idx/PmiREN_rest > /dev/null 2>&1
-            bowtie2-build --threads $threads $path_sRNAanno/database_species.fasta $path_sRNAanno/sRNAanno_species_idx/sRNAanno_species > /dev/null 2>&1
-            bowtie2-build --threads $threads $path_sRNAanno/database_rest.fasta $path_sRNAanno/sRNAanno_rest_idx/sRNAanno_rest > /dev/null 2>&1
+            bowtie-build --threads $threads $path_mirbase/database_species.fasta $path_mirbase/mirbase_species_idx/mirbase_species > /dev/null 2>&1
+            bowtie-build --threads $threads $path_mirbase/database_rest.fasta $path_mirbase/mirbase_rest_idx/mirbase_rest > /dev/null 2>&1
+            bowtie-build --threads $threads $path_PmiREN/database_species.fasta $path_PmiREN/PmiREN_species_idx/PmiREN_species > /dev/null 2>&1
+            bowtie-build --threads $threads $path_PmiREN/database_rest.fasta $path_PmiREN/PmiREN_rest_idx/PmiREN_rest > /dev/null 2>&1
+            bowtie-build --threads $threads $path_sRNAanno/database_species.fasta $path_sRNAanno/sRNAanno_species_idx/sRNAanno_species > /dev/null 2>&1
+            bowtie-build --threads $threads $path_sRNAanno/database_rest.fasta $path_sRNAanno/sRNAanno_rest_idx/sRNAanno_rest > /dev/null 2>&1
             
             # Iterate projects
             for project in $projects_list
@@ -692,62 +692,63 @@ main () {
                         if test -f "$path_fasta_files/$out_name""_dea_"$suffix".fasta"
                         then
 
-                            # Alignment with miRBase (species database)
-                            printf "Bowtie2 alignment with miRBase (species database)...\n"
-                            results_mirbase_sp=$(bowtie2 -f --no-unal -p $threads \
-                                                         -x $path_mirbase/mirbase_species_idx/mirbase_species \
-                                                         -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
-                                                         -S $path_sam_files/$out_name"_mirbase_species.sam" 2>&1)
+                            # Alignment with miRBase (species database. No mismatches)
+                            printf "Bowtie alignment with miRBase (species database)...\n"
+                            results_mirbase_sp=$(bowtie -x $path_mirbase/mirbase_species_idx/mirbase_species \
+                                                        --best -v 0 -k1 --no-unal -p $threads \
+                                                        -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                        -S $path_sam_files/$out_name"_mirbase_species.sam" 2>&1)
                             
                             # Check if an alignment error occurred due to the non-existence of the database.
                             [ $? -ne 0 ] && echo "Species $species not found in the miRBase database!" || printf "Done!\n"
 
-                            # Alignment with miRBase (Rest database)
-                            printf "Bowtie2 alignment with miRBase (others database)...\n"
-                            results_mirbase_others=$(bowtie2 -f --no-unal -p $threads \
-                                                             -x $path_mirbase/mirbase_rest_idx/mirbase_rest \
-                                                             -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
-                                                             -S $path_sam_files/$out_name"_mirbase_rest.sam" 2>&1)
+                            # Alignment with miRBase (Rest database. No mismatches)
+                            printf "Bowtie alignment with miRBase (others database)...\n"
+                            results_mirbase_others=$(bowtie -x $path_mirbase/mirbase_rest_idx/mirbase_rest \
+                                                            --best -v 0 -k1 --no-unal -p $threads \
+                                                            -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                            -S $path_sam_files/$out_name"_mirbase_rest.sam" 2>&1)
                                                     
                             # Check if an alignment error occurred due to the non-existence of the database.
                             [ $? -ne 0 ] && echo "Species $species not found in the miRBase database!" || printf "Done!\n"
 
-                            # Alignment with PmiREN (species database)
-                            printf "Bowtie2 alignment with PmiREN (species database)...\n"
-                            results_pmiren_sp=$(bowtie2 -f --no-unal -p $threads \
-                                                        -x $path_PmiREN/PmiREN_species_idx/PmiREN_species \
-                                                        -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
-                                                        -S $path_sam_files/$out_name"_PmiREN_species.sam" 2>&1)
+                            # Alignment with PmiREN (species database. No mismatches)
+                            printf "Bowtie alignment with PmiREN (species database)...\n"
+                            results_pmiren_sp=$(bowtie -x $path_PmiREN/PmiREN_species_idx/PmiREN_species \
+                                                       --best -v 0 -k1 --no-unal -p $threads \
+                                                       -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                       -S $path_sam_files/$out_name"_PmiREN_species.sam" 2>&1)
 
                             # Check if an alignment error occurred due to the non-existence of the database.
                             [ $? -ne 0 ] && echo "Species $species not found in the PmiREN database!" || printf "Done!\n"
                             
-                            # Alignment with PmiREN (Rest database)
-                            printf "Bowtie2 alignment with PmiREN (others database)...\n"
-                            results_pmiren_others=$(bowtie2 -f --no-unal -p $threads \
-                                                            -x $path_PmiREN/PmiREN_rest_idx/PmiREN_rest \
-                                                            -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
-                                                            -S $path_sam_files/$out_name"_PmiREN_rest.sam" 2>&1)
+                            # Alignment with PmiREN (Rest database. No mismatches)
+                            printf "Bowtie alignment with PmiREN (others database)...\n"
+                            results_pmiren_others=$(bowtie -x $path_PmiREN/PmiREN_rest_idx/PmiREN_rest \
+                                                           --best -v 0 -k1 --no-unal -p $threads \
+                                                           -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                           -S $path_sam_files/$out_name"_PmiREN_rest.sam" 2>&1)
                             
                             # Check if an alignment error occurred due to the non-existence of the database.
                             [ $? -ne 0 ] && echo "Species $species not found in the PmiREN database!" || printf "Done!\n"
 
-                            # Alignment with sRNAanno (species database)
-                            printf "Bowtie2 alignment with sRNAanno (species database)...\n"
-                            results_srnaanno_sp=$(bowtie2 -f --no-unal -p $threads \
-                                                        -x $path_sRNAanno/sRNAanno_species_idx/sRNAanno_species \
-                                                        -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
-                                                        -S $path_sam_files/$out_name"_sRNAanno_species.sam" 2>&1)
+                            # Alignment with sRNAanno (species database. No mismatches)
+                            printf "Bowtie alignment with sRNAanno (species database)...\n"
+                            results_srnaanno_sp=$(bowtie -x $path_sRNAanno/sRNAanno_species_idx/sRNAanno_species \
+                                                         --best -v 0 -k1 --no-unal -p $threads \
+                                                         -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                         -S $path_sam_files/$out_name"_sRNAanno_species.sam" 2>&1)
 
+                            echo 
                             # Check if an alignment error occurred due to the non-existence of the database.
                             [ $? -ne 0 ] && echo "Species $species not found in the sRNAanno database!" || printf "Done!\n"
                             
-                            # Alignment with sRNAanno (Rest database)
-                            printf "Bowtie2 alignment with sRNAanno (others database)...\n"
-                            results_srnaanno_others=$(bowtie2 -f --no-unal -p $threads \
-                                                              -x $path_sRNAanno/sRNAanno_rest_idx/sRNAanno_rest \
-                                                              -U $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
-                                                              -S $path_sam_files/$out_name"_sRNAanno_rest.sam" 2>&1)
+                            # Alignment with sRNAanno (Rest database. No mismatches)
+                            printf "Bowtie alignment with sRNAanno (others database)...\n"
+                            results_srnaanno_others=$(bowtie -x $path_sRNAanno/sRNAanno_rest_idx/sRNAanno_rest \
+                                                             --best -v 0 -k1 --no-unal -p $threads \
+                                                             -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
+                                                             -S $path_sam_files/$out_name"_sRNAanno_rest.sam" 2>&1)
                             
                             # Check if an alignment error occurred due to the non-existence of the database.
                             [ $? -ne 0 ] && echo "Species $species not found in the sRNAanno database!" || printf "Done!\n"
