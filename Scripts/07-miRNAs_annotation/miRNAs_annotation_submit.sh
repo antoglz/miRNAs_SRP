@@ -30,6 +30,7 @@ path_sRNAanno=/storage/ncRNA/Projects/sRNA_project/05-Databases/miRNAs/Sequence_
 path_ids_table=/storage/ncRNA/Projects/sRNA_project/00-Species_and_stresses_information/species_id.csv
 ea_table=/home/gonsanan/miRNAs_srp_project/Results/05-Exploratory_analysis/ea_summary.csv
 mww_pvalue=0.05
+mismatches=1
 
 # Ouput paths
 path_out=/home/gonsanan/miRNAs_srp_project/Results/07-Identification_miRNAs
@@ -41,6 +42,7 @@ num_threads=12
 bash miRNAs_annotation.sh \
      --input $path_in \
      --output $path_out \
+     --mismatches $mismatches \
      --mirbase $path_mirbase \
      --pmiren $path_PmiREN \
      --srnaanno $path_sRNAanno \

@@ -53,6 +53,7 @@ usage() {
                                 directories.
         -o/--output             Path to the directory where the miRNA annotation
                                 results will be stored.
+        -v/--mismatches         Number of mismatches allowed per Bowtie.
         -s/--mirbase            Path to the directory where the downloaded
                                 miRNAs and precursors (hairpin) files from
                                 miRBase are located.
@@ -88,7 +89,7 @@ arguments_management() {
     mww_pvalue=-1
 
     # Read the options
-    TEMP=$(getopt -o h::i:o:m:e:a:s:t:l:a:p: --long help::,input:,output:,mirbase:,pmiren:,srnaanno:,species-ids:,threads:,projects-list:,ea-table:,mww-pvalue: -- "$@")
+    TEMP=$(getopt -o h::i:o:v:m:e:a:s:t:l:a:p: --long help::,input:,output:,mismatches:,mirbase:,pmiren:,srnaanno:,species-ids:,threads:,projects-list:,ea-table:,mww-pvalue: -- "$@")
 
     # Check if the arguments are valid
     VALID_ARGUMENTS=$?
@@ -110,6 +111,8 @@ arguments_management() {
                 path_in="$2"; shift 2 ;;
             -o|--output)
                 path_out="$2"; shift 2 ;;
+            -v|--mismatches)
+                mismatches="$2"; shift 2 ;;
             -m|--mirbase)
                 path_mirbase="$2"; shift 2 ;;
             -e|--pmiren)
@@ -695,7 +698,7 @@ main () {
                             # Alignment with miRBase (species database. No mismatches)
                             printf "Bowtie alignment with miRBase (species database)...\n"
                             results_mirbase_sp=$(bowtie -x $path_mirbase/mirbase_species_idx/mirbase_species \
-                                                        --best -v 0 -k1 --no-unal -p $threads \
+                                                        --best -v $mismatches -k1 --no-unal -p $threads \
                                                         -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
                                                         -S $path_sam_files/$out_name"_mirbase_species.sam" 2>&1)
                             
@@ -703,9 +706,10 @@ main () {
                             [ $? -ne 0 ] && echo "Species $species not found in the miRBase database!" || printf "Done!\n"
 
                             # Alignment with miRBase (Rest database. No mismatches)
+                            printf "bowtie -x $path_mirbase/mirbase_rest_idx/mirbase_rest --best -v $mismatches -k1 --no-unal -p $threads -f _dea_.fasta -S sam_mirbase_rest.sam"
                             printf "Bowtie alignment with miRBase (others database)...\n"
                             results_mirbase_others=$(bowtie -x $path_mirbase/mirbase_rest_idx/mirbase_rest \
-                                                            --best -v 0 -k1 --no-unal -p $threads \
+                                                            --best -v $mismatches -k1 --no-unal -p $threads \
                                                             -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
                                                             -S $path_sam_files/$out_name"_mirbase_rest.sam" 2>&1)
                                                     
@@ -715,7 +719,7 @@ main () {
                             # Alignment with PmiREN (species database. No mismatches)
                             printf "Bowtie alignment with PmiREN (species database)...\n"
                             results_pmiren_sp=$(bowtie -x $path_PmiREN/PmiREN_species_idx/PmiREN_species \
-                                                       --best -v 0 -k1 --no-unal -p $threads \
+                                                       --best -v $mismatches -k1 --no-unal -p $threads \
                                                        -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
                                                        -S $path_sam_files/$out_name"_PmiREN_species.sam" 2>&1)
 
@@ -725,7 +729,7 @@ main () {
                             # Alignment with PmiREN (Rest database. No mismatches)
                             printf "Bowtie alignment with PmiREN (others database)...\n"
                             results_pmiren_others=$(bowtie -x $path_PmiREN/PmiREN_rest_idx/PmiREN_rest \
-                                                           --best -v 0 -k1 --no-unal -p $threads \
+                                                           --best -v $mismatches -k1 --no-unal -p $threads \
                                                            -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
                                                            -S $path_sam_files/$out_name"_PmiREN_rest.sam" 2>&1)
                             
@@ -735,7 +739,7 @@ main () {
                             # Alignment with sRNAanno (species database. No mismatches)
                             printf "Bowtie alignment with sRNAanno (species database)...\n"
                             results_srnaanno_sp=$(bowtie -x $path_sRNAanno/sRNAanno_species_idx/sRNAanno_species \
-                                                         --best -v 0 -k1 --no-unal -p $threads \
+                                                         --best -v $mismatches -k1 --no-unal -p $threads \
                                                          -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
                                                          -S $path_sam_files/$out_name"_sRNAanno_species.sam" 2>&1)
 
@@ -746,7 +750,7 @@ main () {
                             # Alignment with sRNAanno (Rest database. No mismatches)
                             printf "Bowtie alignment with sRNAanno (others database)...\n"
                             results_srnaanno_others=$(bowtie -x $path_sRNAanno/sRNAanno_rest_idx/sRNAanno_rest \
-                                                             --best -v 0 -k1 --no-unal -p $threads \
+                                                             --best -v $mismatches -k1 --no-unal -p $threads \
                                                              -f $path_fasta_files/$out_name"_dea_"$suffix".fasta" \
                                                              -S $path_sam_files/$out_name"_sRNAanno_rest.sam" 2>&1)
                             
