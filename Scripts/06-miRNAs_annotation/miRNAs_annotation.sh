@@ -659,7 +659,7 @@ main () {
                         [[ $valid_subprojects != *$file_suffix_removed* ]] && valid="false" || valid="true"
                             
                         # Save results in summary file and pass to the next subproject.
-                        if [[ $valid == "true" ]]
+                        if [[ $valid == "false" ]]
                         then
                             echo $species","$out_name",NA,NA" >> $path_out_summary
                             continue
