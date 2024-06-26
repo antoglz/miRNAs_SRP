@@ -102,7 +102,7 @@ FastpTrimming(){
             --correction --cut_right --cut_right_window_size 4 --cut_right_mean_quality 20 \
             --cut_front --cut_front_window_size 1 --cut_front_mean_quality 3 \
             --length_required $min_len --trim_poly_x --poly_x_min_len 10 \
-            --length_limit $max_len --n_base_limit 1
+            --length_limit $max_len --n_base_limit 0
 
     ## Single end
     elif [[ "$file" != *_2.fastq.gz ]];
@@ -113,7 +113,7 @@ FastpTrimming(){
             --cut_right --cut_right_window_size 4 --cut_right_mean_quality 20 \
             --cut_front --cut_front_window_size 1 --cut_front_mean_quality 3 \
             --length_required $min_len --trim_poly_x --poly_x_min_len 10 \
-            --length_limit $max_len --n_base_limit 1
+            --length_limit $max_len --n_base_limit 0
     fi
 }
 
