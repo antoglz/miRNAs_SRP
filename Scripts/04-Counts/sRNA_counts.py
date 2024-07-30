@@ -1281,6 +1281,10 @@ def create_count_tables (list_abs: list, list_rpm: list, path_write_project: str
     # Get informative variables from the project metadata (columns from 0-n)
     inf_var = get_informative_variables(path_metadata)
 
+    # Sort input lists
+    list_abs.sort()
+    list_rpm.sort()
+    
     # Iterate a number of times equal to len(list_abs) and len(list_rpm)
     for index1 in range(len(list_abs)):
 
